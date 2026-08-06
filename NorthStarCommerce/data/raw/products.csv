@@ -1,0 +1,121 @@
+﻿ProductID,CategoryID,ProductName,UnitPrice,UnitCost,LaunchDate,IsActive
+1,1,Northstar Essential Headphones,25.86,14.98,2022-08-23,Yes
+2,1,Northstar Essential Speaker,232.72,130.44,2022-09-02,Yes
+3,1,Northstar Essential Charger,54.99,35.93,2023-12-19,Yes
+4,1,Northstar Advanced Headphones,210.03,134.32,2021-08-11,Yes
+5,1,Northstar Advanced Speaker,165.41,99.45,2021-07-29,Yes
+6,1,Northstar Advanced Charger,134.83,81.06,2021-02-15,Yes
+7,1,Northstar Compact Headphones,82.17,38.65,2026-03-27,Yes
+8,1,Northstar Compact Speaker,60.94,34.3,2021-08-06,Yes
+9,1,Northstar Compact Charger,190.34,93.37,2022-10-21,Yes
+10,1,Northstar Wireless Headphones,129.8,82.19,2022-02-23,No
+11,1,Northstar Wireless Speaker,120.77,80.05,2025-08-21,Yes
+12,1,Northstar Wireless Charger,32.99,15.31,2025-11-18,Yes
+13,1,Northstar Premium Headphones,214.28,137.93,2025-09-16,Yes
+14,1,Northstar Premium Speaker,112.14,68.48,2026-07-04,Yes
+15,1,Northstar Premium Charger,214.48,136.0,2024-04-05,Yes
+16,2,Northstar Classic Cookware Set,147.8,89.53,2025-11-11,Yes
+17,2,Northstar Classic Coffee Maker,49.24,23.17,2021-02-23,Yes
+18,2,Northstar Classic Blender,297.4,162.64,2025-06-23,Yes
+19,2,Northstar Modern Cookware Set,187.89,103.57,2026-01-13,Yes
+20,2,Northstar Modern Coffee Maker,143.1,98.6,2023-06-03,Yes
+21,2,Northstar Modern Blender,186.31,108.26,2023-02-19,Yes
+22,2,Northstar Deluxe Cookware Set,126.31,59.83,2022-07-09,Yes
+23,2,Northstar Deluxe Coffee Maker,242.6,119.71,2024-09-21,Yes
+24,2,Northstar Deluxe Blender,182.56,84.03,2023-07-01,Yes
+25,2,Northstar Compact Cookware Set,65.25,45.46,2021-08-16,No
+26,2,Northstar Compact Coffee Maker,58.65,27.47,2025-01-27,Yes
+27,2,Northstar Compact Blender,43.85,23.62,2025-05-03,Yes
+28,2,Northstar Professional Cookware Set,144.36,88.45,2021-02-08,Yes
+29,2,Northstar Professional Coffee Maker,132.87,64.9,2022-03-25,Yes
+30,2,Northstar Professional Blender,140.06,70.15,2022-06-02,No
+31,3,Northstar Ergonomic Desk Chair,223.05,131.27,2022-06-15,Yes
+32,3,Northstar Ergonomic Desk Lamp,178.55,98.83,2021-07-08,Yes
+33,3,Northstar Ergonomic Organizer,182.57,94.92,2022-10-26,Yes
+34,3,Northstar Executive Desk Chair,131.78,91.61,2021-08-20,Yes
+35,3,Northstar Executive Desk Lamp,151.59,73.02,2023-02-13,Yes
+36,3,Northstar Executive Organizer,174.53,89.4,2021-01-26,Yes
+37,3,Northstar Essential Desk Chair,104.18,64.52,2026-06-18,Yes
+38,3,Northstar Essential Desk Lamp,167.84,79.78,2024-12-06,Yes
+39,3,Northstar Essential Organizer,191.33,127.15,2024-05-29,Yes
+40,3,Northstar Compact Desk Chair,57.05,39.16,2026-06-10,No
+41,3,Northstar Compact Desk Lamp,200.85,95.31,2025-02-02,Yes
+42,3,Northstar Compact Organizer,134.74,77.68,2022-03-17,Yes
+43,3,Northstar Premium Desk Chair,203.73,120.34,2024-04-25,Yes
+44,3,Northstar Premium Desk Lamp,257.58,153.14,2023-05-10,Yes
+45,3,Northstar Premium Organizer,318.53,164.52,2021-08-29,Yes
+46,4,Northstar Performance Dumbbell Set,35.98,22.74,2024-12-19,Yes
+47,4,Northstar Performance Yoga Mat,32.3,14.59,2025-02-08,Yes
+48,4,Northstar Performance Resistance Kit,50.11,31.47,2023-09-09,Yes
+49,4,Northstar Adjustable Dumbbell Set,113.16,76.71,2022-01-27,Yes
+50,4,Northstar Adjustable Yoga Mat,222.26,139.07,2026-06-23,Yes
+51,4,Northstar Adjustable Resistance Kit,200.99,122.0,2022-04-13,Yes
+52,4,Northstar Portable Dumbbell Set,55.77,35.61,2025-07-27,Yes
+53,4,Northstar Portable Yoga Mat,269.43,150.59,2023-05-01,Yes
+54,4,Northstar Portable Resistance Kit,130.08,59.44,2022-06-21,Yes
+55,4,Northstar Essential Dumbbell Set,228.22,122.11,2021-10-08,Yes
+56,4,Northstar Essential Yoga Mat,174.49,90.2,2022-08-02,Yes
+57,4,Northstar Essential Resistance Kit,255.67,119.68,2025-02-28,Yes
+58,4,Northstar Professional Dumbbell Set,120.58,77.39,2023-09-21,Yes
+59,4,Northstar Professional Yoga Mat,82.45,48.0,2025-11-01,Yes
+60,4,Northstar Professional Resistance Kit,150.65,68.85,2022-10-08,Yes
+61,5,Northstar Trail Backpack,321.9,154.33,2021-06-13,Yes
+62,5,Northstar Trail Camping Chair,145.25,79.65,2025-05-14,Yes
+63,5,Northstar Trail Cooler,71.04,44.43,2023-10-13,Yes
+64,5,Northstar Weatherproof Backpack,116.11,55.66,2026-07-04,Yes
+65,5,Northstar Weatherproof Camping Chair,286.26,129.28,2024-04-27,Yes
+66,5,Northstar Weatherproof Cooler,222.17,144.18,2021-01-30,Yes
+67,5,Northstar Adventure Backpack,46.52,31.22,2024-07-07,Yes
+68,5,Northstar Adventure Camping Chair,203.09,129.22,2024-11-07,Yes
+69,5,Northstar Adventure Cooler,86.2,47.39,2022-03-22,Yes
+70,5,Northstar Lightweight Backpack,69.14,34.08,2022-04-10,Yes
+71,5,Northstar Lightweight Camping Chair,31.5,22.03,2025-09-15,Yes
+72,5,Northstar Lightweight Cooler,87.87,60.52,2025-01-14,Yes
+73,5,Northstar Expedition Backpack,316.93,180.79,2022-07-16,Yes
+74,5,Northstar Expedition Camping Chair,308.24,209.74,2022-08-04,Yes
+75,5,Northstar Expedition Cooler,137.66,85.63,2022-02-24,No
+76,6,Northstar Daily Skin Care Set,149.31,89.4,2026-07-10,Yes
+77,6,Northstar Daily Hair Dryer,73.83,42.14,2024-11-29,Yes
+78,6,Northstar Daily Grooming Kit,38.8,24.75,2023-08-23,Yes
+79,6,Northstar Radiant Skin Care Set,25.75,16.41,2023-02-11,Yes
+80,6,Northstar Radiant Hair Dryer,137.27,75.93,2026-04-13,Yes
+81,6,Northstar Radiant Grooming Kit,76.5,41.79,2024-06-04,Yes
+82,6,Northstar Essential Skin Care Set,36.63,23.13,2024-07-20,Yes
+83,6,Northstar Essential Hair Dryer,130.8,86.21,2022-10-10,Yes
+84,6,Northstar Essential Grooming Kit,123.25,81.23,2023-01-28,No
+85,6,Northstar Premium Skin Care Set,17.8,9.49,2026-06-14,Yes
+86,6,Northstar Premium Hair Dryer,65.52,35.65,2022-05-23,Yes
+87,6,Northstar Premium Grooming Kit,109.43,51.87,2024-02-11,Yes
+88,6,Northstar Refreshing Skin Care Set,109.07,57.55,2025-10-03,Yes
+89,6,Northstar Refreshing Hair Dryer,162.01,107.64,2025-04-19,Yes
+90,6,Northstar Refreshing Grooming Kit,75.36,47.94,2021-06-12,Yes
+91,7,Northstar Comfort Pet Bed,21.19,14.52,2023-05-23,Yes
+92,7,Northstar Comfort Feeding Set,106.09,66.53,2021-11-07,Yes
+93,7,Northstar Comfort Toy Pack,156.79,83.53,2024-12-28,Yes
+94,7,Northstar Durable Pet Bed,141.47,85.54,2023-05-11,Yes
+95,7,Northstar Durable Feeding Set,55.35,36.76,2026-01-19,Yes
+96,7,Northstar Durable Toy Pack,121.94,82.0,2025-06-02,Yes
+97,7,Northstar Interactive Pet Bed,108.59,71.92,2023-12-07,Yes
+98,7,Northstar Interactive Feeding Set,16.37,9.86,2026-04-23,Yes
+99,7,Northstar Interactive Toy Pack,154.26,94.48,2024-02-18,Yes
+100,7,Northstar Travel Pet Bed,54.82,33.07,2024-09-07,No
+101,7,Northstar Travel Feeding Set,133.68,64.05,2021-06-07,Yes
+102,7,Northstar Travel Toy Pack,43.35,26.88,2024-01-08,Yes
+103,7,Northstar Premium Pet Bed,64.36,33.39,2021-07-04,Yes
+104,7,Northstar Premium Feeding Set,36.05,20.8,2023-05-28,Yes
+105,7,Northstar Premium Toy Pack,111.74,57.74,2026-03-14,Yes
+106,8,Northstar Creative Board Game,19.23,10.51,2022-08-31,Yes
+107,8,Northstar Creative Building Set,39.57,23.77,2022-06-05,Yes
+108,8,Northstar Creative Activity Kit,16.8,11.41,2021-10-15,Yes
+109,8,Northstar Family Board Game,77.69,50.55,2022-04-20,Yes
+110,8,Northstar Family Building Set,101.07,61.51,2021-07-26,Yes
+111,8,Northstar Family Activity Kit,70.7,42.18,2026-03-08,Yes
+112,8,Northstar Classic Board Game,20.82,10.32,2024-12-14,Yes
+113,8,Northstar Classic Building Set,53.61,32.92,2025-07-29,Yes
+114,8,Northstar Classic Activity Kit,133.46,67.21,2021-10-03,Yes
+115,8,Northstar Educational Board Game,47.46,23.31,2023-05-19,Yes
+116,8,Northstar Educational Building Set,100.59,69.31,2021-04-03,Yes
+117,8,Northstar Educational Activity Kit,126.1,69.1,2025-05-21,Yes
+118,8,Northstar Adventure Board Game,108.9,71.94,2025-03-22,Yes
+119,8,Northstar Adventure Building Set,102.04,59.06,2022-11-10,Yes
+120,8,Northstar Adventure Activity Kit,18.92,12.46,2025-01-04,Yes
