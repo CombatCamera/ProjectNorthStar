@@ -22,8 +22,14 @@ python .\NorthStarCommerce\python\generators\generate_ecommerce_data.py
 ```
 
 ```bash
-python .\NorthStarCommerce\python\qa\qa_validation.py
+python .\NorthStarCommerce\python\utilities\qa_validation.py
 ```
+
+```bash
+python .\python\utilities\privacy_engine.py
+```
+
+
 
 ## SQL
 

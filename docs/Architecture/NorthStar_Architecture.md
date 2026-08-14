@@ -152,6 +152,14 @@ Responsibilities *(To be completed)*
 
 Non-Responsibilities *(To be completed)*
 
+Future Ehancements
+
+- Category-aware purchase health scoring (ver. 2)
+- Subscription-aware purchasing behavior (ver. 2)
+- consumable vs. durable product classification (ver. 2)
+- Seasonal purchsing models (ver. 2)
+- Multi-category customer behavior (ver. 2)
+
 ---
 
 ### Training Dataset Generator
