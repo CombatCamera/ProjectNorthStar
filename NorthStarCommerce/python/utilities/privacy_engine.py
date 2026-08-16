@@ -5,12 +5,13 @@ Engine:         Privacy Engine
 File:           privacy_engine.py
 Author:         Mat Thompson
 Created:        2026-08-13
-Version:        1.0
+Last Updated:   2026-08-16
+Version:        2.0
 
 Purpose:
-    Protect customer privacy by generating anonymized datasets while preserving
-    the business relationships required for downstream analytics and machine
-    learning.
+    Transform enterprise datasets into privacy-preserving analytical datasets
+    while maintaining the business relationships required for downstream
+    analytics, machine learning, and predictive modeling.
 
 Inputs:
     - customers.csv
@@ -18,28 +19,62 @@ Inputs:
     - payments.csv
 
 Outputs:
-    - anonymous_customers.csv
-    - anonymous_orders.csv
-    - anonymous_payments.csv
+    - anonymous_purchase_history.csv
+
+Current Privacy Transformations:
+    - Customer anonymization (UUID mapping)
+    - Order anonymization (UUID mapping)
+    - Customer-scoped temporal offset mapping
+    - PII removal using field whitelists
+    - Relationship reconstruction
+
+Planned Privacy Transformations:
+    - Configurable privacy modes
+    - Optional intermediate datasets
+    - Additional privacy-preserving transformations
 
 Responsibilities:
-    - Generate dataset-scoped AnonymousCustomerKey values.
-    - Replace CustomerID with AnonymousCustomerKey.
-    - Remove unnecessary personally identifiable information (PII).
-    - Preserve relationships across all processed tables.
+    - Generate dataset-scoped anonymous identifiers.
+    - Apply customer-scoped temporal offsets.
+    - Remove personally identifiable information (PII).
+    - Preserve business relationships across datasets.
+    - Produce privacy-safe datasets for downstream engines.
 
 Non-Responsibilities:
+    - Data standardization
+    - Business analytics
     - Feature engineering
     - Purchase Health calculations
     - Machine learning
     - Predictive analytics
     - Revenue analysis
-    - Category-aware purchasing analysis
 
 Engineering Laws:
     1. Every field must earn its place.
     2. Every engine has one responsibility.
     3. No useful idea is discarded.
+    4. Every transformation leaves no trace.
+
+Future Architecture:
+    External Data
+            │
+            ▼
+    Ingestion Layer
+            │
+            ▼
+    Standardization Engine
+            │
+            ▼
+    QA Validation
+            │
+            ▼
+    Privacy Engine
+            │
+            ▼
+    Feature Engineering
+            │
+            ▼
+    Machine Learning
 
 ===============================================================================
 """
@@ -47,6 +82,9 @@ Engineering Laws:
 import uuid
 import csv
 import os
+import random
+
+from datetime import datetime, timedelta
 
 # =============================================================================
 # Configuration
@@ -65,7 +103,8 @@ PAYMENT_OUTPUT_FILE = "data/privacy_filtered/anonymous_payments.csv"
 PURCHASE_HISTORY_OUTPUT_FILE = "data/privacy_filtered/anonymous_purchase_history.csv"
 
 
-
+MIN_TEMPORAL_OFFSET_DAYS = -365
+MAX_TEMPORAL_OFFSET_DAYS = 365
 
 
 # Customer Whitelist
@@ -102,7 +141,7 @@ PURCHASE_HISTORY_OUTPUT_FIELDS = [
 # =============================================================================
 # Helper Functions
 # =============================================================================
-# Loading
+# LOADING
 def load_csv(file_path):
     data = []
     
@@ -138,25 +177,87 @@ def generate_anonymous_order_mapping(order_data):
         
     return anonymous_order_map
 
-# CUSTOMER
-def filter_customer_data(customer_data, anonymous_customer_map):
+# TEMPORAL OFFSET MAPPING
+def generate_temporal_offset_mapping(
+    customer_data,
+    anonymous_customer_map
+):
+    customer_temporal_offset_map = {}
+    
+    for customer in customer_data:
+        customer_id = customer["CustomerID"]
+        anonymous_customer_key = anonymous_customer_map[customer_id]
+        temporal_offset_days = random.randint(
+            MIN_TEMPORAL_OFFSET_DAYS,
+            MAX_TEMPORAL_OFFSET_DAYS
+        )
+        customer_temporal_offset_map[
+            anonymous_customer_key
+        ] = temporal_offset_days
+    
+    return customer_temporal_offset_map
+
+
+
+# DATETIME SHIFT
+def shift_datetime(date_string, temporal_offset_days):
+    date_object = datetime.strptime(
+        date_string,
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    shifted_datetime_object = date_object + timedelta(
+        days=temporal_offset_days
+    )
+
+    return shifted_datetime_object.strftime("%Y-%m-%d %H:%M:%S")
+
+
+# DATE SHIFT
+def shift_date(date_string, temporal_offset_days):
+    date_object = datetime.strptime(
+        date_string,
+        "%Y-%m-%d"
+    )
+
+    shifted_date_object = date_object + timedelta(
+        days=temporal_offset_days
+    )
+
+    return shifted_date_object.strftime("%Y-%m-%d")
+    
+# CUSTOMER FILTER
+def filter_customer_data(
+    customer_data,
+    anonymous_customer_map,
+    customer_temporal_offset_map
+):
     
     privacy_filtered_customer_data = []
 
     for customer in customer_data:
         customer_id = customer["CustomerID"]
         anonymous_customer_key = anonymous_customer_map[customer_id]
+        temporal_offset_days = customer_temporal_offset_map[anonymous_customer_key]
         privacy_filtered_customer = {
             "AnonymousCustomerKey": anonymous_customer_key,
-            "JoinDate": customer["JoinDate"]
+            "JoinDate": shift_date(
+                customer["JoinDate"],
+                temporal_offset_days
+            )
         }
         privacy_filtered_customer_data.append(privacy_filtered_customer)
     
     return privacy_filtered_customer_data
 
 
-# ORDERS
-def filter_order_data(order_data, anonymous_customer_map, anonymous_order_map):
+# ORDERS FILTER
+def filter_order_data(
+    order_data, 
+    anonymous_customer_map,
+    anonymous_order_map,
+    customer_temporal_offset_map
+):
     
     privacy_filtered_order_data = []
 
@@ -164,65 +265,100 @@ def filter_order_data(order_data, anonymous_customer_map, anonymous_order_map):
         order_id = order["OrderID"]
         customer_id = order["CustomerID"]
         anonymous_customer_key = anonymous_customer_map[customer_id]
+        temporal_offset_days = customer_temporal_offset_map[
+            anonymous_customer_key
+        ]
         anonymous_order_key = anonymous_order_map[order_id]
         privacy_filtered_order = {
             "AnonymousOrderKey": anonymous_order_key,
             "AnonymousCustomerKey": anonymous_customer_key,
-            "OrderDateTime": order["OrderDateTime"]
+            "OrderDateTime": shift_datetime(
+                order["OrderDateTime"],
+                temporal_offset_days
+            )
         }
         privacy_filtered_order_data.append(privacy_filtered_order)
     
     return privacy_filtered_order_data
 
 
-# PAYMENTS
-def filter_payment_data(payment_data, anonymous_order_map):
-    
+# PAYMENTS FILTER
+def filter_payment_data(
+    payment_data,
+    anonymous_order_map,
+    privacy_filtered_order_data,
+    customer_temporal_offset_map
+):
+
     privacy_filtered_payment_data = []
-    
+    order_customer_lookup = {}
+
+    for order in privacy_filtered_order_data:
+        anonymous_order_key = order["AnonymousOrderKey"]
+        anonymous_customer_key = order["AnonymousCustomerKey"]
+
+        order_customer_lookup[anonymous_order_key] = anonymous_customer_key
+
     for payment in payment_data:
         order_id = payment["OrderID"]
+
         anonymous_order_key = anonymous_order_map[order_id]
+
+        anonymous_customer_key = order_customer_lookup[
+            anonymous_order_key
+        ]
+
+        temporal_offset_days = customer_temporal_offset_map[
+            anonymous_customer_key
+        ]
+
         payment_attempt = payment["PaymentAttempt"]
         payment_status = payment["PaymentStatus"]
+
         privacy_filtered_payment = {
             "AnonymousOrderKey": anonymous_order_key,
             "PaymentAttempt": payment_attempt,
-            "PaymentDateTime": payment["PaymentDateTime"],
+            "PaymentDateTime": shift_datetime(
+                payment["PaymentDateTime"],
+                temporal_offset_days
+            ),
             "PaymentStatus": payment_status
         }
-        privacy_filtered_payment_data.append(privacy_filtered_payment)
-        
+
+        privacy_filtered_payment_data.append(
+            privacy_filtered_payment
+        )
+
     return privacy_filtered_payment_data
 
 # MERGE ANONYMOUS DATA
-def reconstruct_purchase_history(privacy_filtered_customer_data, privacy_filtered_order_data, privacy_filtered_payment_data):
+def reconstruct_purchase_history(
+    privacy_filtered_customer_data,
+    privacy_filtered_order_data,
+    privacy_filtered_payment_data
+):
 
     anonymous_purchase_history_data = []
-    
+
     customer_lookup = {}
     order_lookup = {}
-    
-    
+
     for customer in privacy_filtered_customer_data:
         anonymous_customer_key = customer["AnonymousCustomerKey"]
         customer_lookup[anonymous_customer_key] = customer
-    
-    
+
     for order in privacy_filtered_order_data:
         anonymous_order_key = order["AnonymousOrderKey"]
         order_lookup[anonymous_order_key] = order
-        
-        
+
     for payment in privacy_filtered_payment_data:
         anonymous_order_key = payment["AnonymousOrderKey"]
-        
+
         order = order_lookup[anonymous_order_key]
-        
         anonymous_customer_key = order["AnonymousCustomerKey"]
-        
+
         customer = customer_lookup[anonymous_customer_key]
-       
+
         payment_history = {
             "AnonymousCustomerKey": anonymous_customer_key,
             "JoinDate": customer["JoinDate"],
@@ -231,10 +367,10 @@ def reconstruct_purchase_history(privacy_filtered_customer_data, privacy_filtere
             "PaymentAttempt": payment["PaymentAttempt"],
             "PaymentDateTime": payment["PaymentDateTime"],
             "PaymentStatus": payment["PaymentStatus"]
-         }
-            
+        }
+
         anonymous_purchase_history_data.append(payment_history)
-    
+
     return anonymous_purchase_history_data
 
 
@@ -281,26 +417,33 @@ def main(customer_file, order_file, payment_file):
     # Generate anonymous mapping
     anonymous_customer_map = generate_anonymous_customer_mapping(customer_data)
     anonymous_order_map = generate_anonymous_order_mapping(order_data)
-    
+    customer_temporal_offset_map = generate_temporal_offset_mapping(
+        customer_data,
+        anonymous_customer_map
+    )
     
     # Filter customer data
     privacy_filtered_customer_data = filter_customer_data(
         customer_data,
-        anonymous_customer_map
+        anonymous_customer_map,
+        customer_temporal_offset_map
     )
     
     # Filter order data
     privacy_filtered_order_data = filter_order_data(
         order_data,
         anonymous_customer_map,
-        anonymous_order_map
+        anonymous_order_map,
+        customer_temporal_offset_map
     )
     
     # Filter payment data
     privacy_filtered_payment_data = filter_payment_data(
-        payment_data,
-        anonymous_order_map
-    )
+    payment_data,
+    anonymous_order_map,
+    privacy_filtered_order_data,
+    customer_temporal_offset_map
+)
     
     # Reconstruct purchase history
     anonymous_purchase_history_data = reconstruct_purchase_history(
