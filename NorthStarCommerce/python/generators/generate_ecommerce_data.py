@@ -1,3 +1,66 @@
+"""
+===============================================================================
+Project:        Project NorthStar
+Engine:         NorthStar Commerce Generation Engine
+File:           generate_ecommerce_data.py
+Author:         Mat Thompson
+Created:        2026-07-25
+Last Updated:   2026-08-17
+Version:        2.0
+
+Purpose:
+    Generate a realistic synthetic e-commerce enterprise dataset for SQL,
+    business intelligence, analytics, and machine learning practice.
+    This engine serves as the single source of truth for NorthStar Commerce
+    data generation.
+
+Inputs:
+    - Configuration constants
+    - Business rules
+    - Probability distributions
+
+Outputs:
+    - customers.csv
+    - categories.csv
+    - products.csv
+    - orders.csv
+    - order_items.csv
+    - payments.csv
+    - shipments.csv
+
+Current Responsibilities:
+    - Generate realistic customer populations.
+    - Generate product catalog and categories.
+    - Generate realistic purchasing behavior.
+    - Generate order items and financial totals.
+    - Generate payment histories.
+    - Generate shipment histories.
+    - Export enterprise datasets.
+
+Non-Responsibilities:
+    - Data quality validation
+    - Privacy protection
+    - Data standardization
+    - Feature engineering
+    - Machine learning
+    - Predictive analytics
+
+Engineering Laws:
+    1. Business realism over random data.
+    2. Every function has one responsibility.
+    3. Shared business rules have one source of truth.
+    4. Generate data once; reuse it many times.
+
+Future Architecture:
+    Shared Generation Engine
+            │
+            ├── Operational Commerce Dataset
+            └── Training Population Dataset
+
+===============================================================================
+"""
+
+
 import csv
 import random
 from datetime import date, datetime, timedelta
@@ -340,6 +403,8 @@ def calculate_orders_for_year(
     join_date: date,
     shopping_profile: str,
     year: int,
+    start_date: date,
+    end_date: date,
 ) -> int:
     """
     Calculate how many orders a customer should place during one year.
@@ -352,12 +417,12 @@ def calculate_orders_for_year(
     year_end = date(year, 12, 31)
     
     #Do not generate activity outside the project's date range.
-    year_start = max(year_start, START_DATE)
-    year_end = min(year_end, END_DATE)
+    year_start = max(year_start, start_date)
+    year_end = min(year_end, end_date)
     
     #The customer had not joined yet or this year falls outside
     #the project's date range.
-    if join_date > year_end or year_start > END_DATE:
+    if join_date > year_end or year_start > end_date:
         return 0
     
     active_start_date = max(join_date, year_start)
@@ -483,7 +548,11 @@ def generate_tracking_number(carrier):
 # DATA GENERATION FUNCTIONS
 # ============================================================
 
-def generate_customers() -> list[dict]:
+def generate_customers(
+    number_of_customers,
+    start_date,
+    end_date,
+) -> list[dict]:
     """Create customer records with realistic demographic distributions."""
     customers = []
 
@@ -502,7 +571,7 @@ def generate_customers() -> list[dict]:
     
     
     
-    for customer_id in range(1, NUMBER_OF_CUSTOMERS + 1):
+    for customer_id in range(1, number_of_customers + 1):
         gender = random.choices(
             ["Female", "Male", "Nonbinary", "Prefer not to say"],
             weights=[49, 48, 2, 1],
@@ -540,7 +609,7 @@ def generate_customers() -> list[dict]:
             k=1,
         )[0]
 
-        join_date = random_date(START_DATE, END_DATE)
+        join_date = random_date(start_date, end_date)
 
         birth_year = random.randint(1945, 2005)
 
@@ -566,7 +635,7 @@ def generate_customers() -> list[dict]:
 
         # Most customers remain active, while older accounts have
         # a slightly greater chance of becoming inactive.
-        account_age_days = (END_DATE - join_date).days
+        account_age_days = (end_date - join_date).days
         inactive_probability = min(
             0.05 + (account_age_days / 10_000),
             0.18,
@@ -618,7 +687,10 @@ def generate_categories() -> list[dict]:
     return categories
 
 
-def generate_products(categories: list[dict]) -> list[dict]:
+def generate_products(
+    categories: list[dict],
+    end_date: date,
+) -> list[dict]:
     """Create 15 products per category for a total of 120 products."""
     products = []
     product_id = 1
@@ -656,7 +728,7 @@ def generate_products(categories: list[dict]) -> list[dict]:
                         "UnitCost": unit_cost,
                         "LaunchDate": random_date(
                             launch_date_start,
-                            END_DATE,
+                            end_date,
                         ).isoformat(),
                         "IsActive": random.choices(
                             ["Yes", "No"],
@@ -678,7 +750,11 @@ def generate_products(categories: list[dict]) -> list[dict]:
 
 
 
-def generate_orders(customers: list[dict]) -> list[dict]:
+def generate_orders(
+    customers: list[dict],
+    start_date: date,
+    end_date: date,
+) -> list[dict]:
     """Create realistic customer order histories."""
     orders = []
     
@@ -689,11 +765,13 @@ def generate_orders(customers: list[dict]) -> list[dict]:
         join_date = date.fromisoformat(customer["JoinDate"])
         shopping_profile = customer["ShoppingProfile"]
 
-        for year in range(START_DATE.year, END_DATE.year + 1):
+        for year in range(start_date.year, end_date.year + 1):
             number_of_orders = calculate_orders_for_year(
                 join_date=join_date,
                 shopping_profile=shopping_profile,
                 year=year,
+                start_date=start_date,
+                end_date=end_date,
             )
                 
             if number_of_orders == 0:
@@ -702,8 +780,8 @@ def generate_orders(customers: list[dict]) -> list[dict]:
             year_start = date(year, 1, 1)
             year_end = date(year, 12, 31)
 
-            order_start_date = max(year_start, join_date, START_DATE)
-            order_end_date = min(year_end, END_DATE)
+            order_start_date = max(year_start, join_date, start_date)
+            order_end_date = min(year_end, end_date)
 
             order_dates = []
             days_in_range = (order_end_date - order_start_date).days
@@ -1156,7 +1234,11 @@ def main() -> None:
     print(f"Date range: {START_DATE} to {END_DATE}")
     print()
 
-    customers = generate_customers()
+    customers = generate_customers(
+        NUMBER_OF_CUSTOMERS,
+        START_DATE,
+        END_DATE
+    )
     
     customer_lookup = {
         customer["CustomerID"]: customer 
@@ -1164,9 +1246,16 @@ def main() -> None:
     }
     
     categories = generate_categories()
-    products = generate_products(categories)
+    products = generate_products(
+        categories,
+        END_DATE
+    )
     product_lookup = build_product_lookup(products)
-    orders = generate_orders(customers)
+    orders = generate_orders(
+        customers,
+        START_DATE,
+        END_DATE,
+    )
     order_items = generate_order_items(orders, products)
     order_items_lookup = build_order_items_lookup(order_items)
     
