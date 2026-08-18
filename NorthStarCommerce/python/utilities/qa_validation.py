@@ -77,13 +77,21 @@ Architecture:
 import csv
 from pathlib import Path
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 
+# =============================================================================
+# DATASET TO VALIDATE
+# =============================================================================
+
+# DATASET = "operational"
+DATASET = "training"
 
 # ========================================================= 
 # REPORT SETTINGS
 # =========================================================
 
 REPORT_WIDTH = 85
+CURRENCY_PRECISION = Decimal("0.01")
 
 # ============================================================
 # PROJECT PATHS
@@ -114,6 +122,12 @@ TRAINING_PAYMENTS_FILE = TRAINING_DATA_FOLDER / "training_payments.csv"
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
+
+def round_currency(value):
+    return value.quantize(
+        CURRENCY_PRECISION,
+        rounding=ROUND_HALF_UP
+    )
 
 def load_csv(file_path):    
     
@@ -425,30 +439,43 @@ def validate_order_totals_reconciled(orders, order_items):
         order_id = order["OrderID"]
         items = order_items_lookup.get(order_id, [])
 
-        calculated_subtotal = sum(
-            float(item["UnitPrice"]) * int(item["Quantity"])
-            for item in items)
-        order_total = float(order["Total"])
+        calculated_subtotal = Decimal("0.00")
 
-        calculated_discount_amount = (
-            calculated_subtotal * float(order["DiscountRate"])
+        for item in items:
+            line_total = round_currency(
+                Decimal(str(item["UnitPrice"]))
+                * Decimal(str(item["Quantity"]))
+            )
+            calculated_subtotal += line_total
+
+        calculated_subtotal = round_currency(calculated_subtotal)
+
+        discount_rate = Decimal(str(order["DiscountRate"]))
+
+        calculated_discount_amount = round_currency(
+            calculated_subtotal * discount_rate
         )
-        
+
         discounted_subtotal = (
             calculated_subtotal - calculated_discount_amount
         )
-        
-        calculated_tax = (
-            discounted_subtotal + float(order["Shipping"])
-        ) * 0.07
-        
-        calculated_total = (
+
+        shipping = Decimal(str(order["Shipping"]))
+
+        calculated_tax = round_currency(
+            (discounted_subtotal + shipping)
+            * Decimal("0.07")
+        )
+
+        calculated_total = round_currency(
             discounted_subtotal
-            + float(order["Shipping"])
+            + shipping
             + calculated_tax
         )
-        
-        if round(calculated_total, 2) != round(order_total, 2):
+
+        order_total = Decimal(str(order["Total"]))
+
+        if calculated_total != order_total:
             print()
             print("=" * 80)
             print("MISMATCHED ORDER FOUND")
@@ -456,6 +483,7 @@ def validate_order_totals_reconciled(orders, order_items):
             print(f"Calculated Subtotal: {calculated_subtotal}")
             print(f"Stored Subtotal: {order['Subtotal']}")
             print(f"Discount Rate: {order['DiscountRate']}")
+            print(f"Calculated Discount Amount: {calculated_discount_amount}")
             print(f"Stored Discount Amount: {order['DiscountAmount']}")
             print(f"Shipping: {order['Shipping']}")
             print(f"Calculated Tax: {calculated_tax}")
@@ -468,15 +496,10 @@ def validate_order_totals_reconciled(orders, order_items):
             mismatched_orders.append(
                 {
                     "OrderID": order_id,
-                    "CalculatedTotal": round(calculated_total, 2),
-                    "OrderTotal": round(order_total, 2),
+                    "CalculatedTotal": calculated_total,
+                    "OrderTotal": order_total,
                 }
             )
-
-
-
-
-
 
     passed = len(mismatched_orders) == 0
 
@@ -489,7 +512,8 @@ def validate_order_totals_reconciled(orders, order_items):
             f"{len(orders):,} orders checked. "
             f"{len(mismatched_orders):,} orders have mismatched totals."
         ),
-    }    
+    }
+    
 
 def validate_shipments_have_orders(shipments, orders):
     orders_lookup = build_orders_lookup(orders)
@@ -1074,21 +1098,28 @@ def main(
         print("End of QA Report".center(REPORT_WIDTH))
         print("=" * REPORT_WIDTH)
         
-# if __name__ == "__main__":
-#        CUSTOMERS_FILE,
-#        PRODUCTS_FILE,
-#        ORDERS_FILE,
-#        ORDER_ITEMS_FILE,
-#        PAYMENTS_FILE,
-#        SHIPMENTS_FILE,
-#    )
-    
-    
 if __name__ == "__main__":
-    main(
-        TRAINING_CUSTOMERS_FILE,
-        TRAINING_PRODUCTS_FILE,
-        TRAINING_ORDERS_FILE,
-        TRAINING_ORDER_ITEMS_FILE,
-        TRAINING_PAYMENTS_FILE,
-    )
+
+    if DATASET == "operational":
+        main(
+            CUSTOMERS_FILE,
+            PRODUCTS_FILE,
+            ORDERS_FILE,
+            ORDER_ITEMS_FILE,
+            PAYMENTS_FILE,
+            SHIPMENTS_FILE,
+        )
+
+    elif DATASET == "training":
+        main(
+            TRAINING_CUSTOMERS_FILE,
+            TRAINING_PRODUCTS_FILE,
+            TRAINING_ORDERS_FILE,
+            TRAINING_ORDER_ITEMS_FILE,
+            TRAINING_PAYMENTS_FILE,
+        )
+
+    else:
+        raise ValueError(
+            f"Unknown dataset: {DATASET}"
+        )

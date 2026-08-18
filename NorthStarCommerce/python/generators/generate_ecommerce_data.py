@@ -65,7 +65,7 @@ import csv
 import random
 from datetime import date, datetime, timedelta
 from pathlib import Path
-
+from decimal import Decimal, ROUND_HALF_UP
 
 # ============================================================
 # PROJECT PATHS
@@ -93,6 +93,8 @@ CURRENT_DATETIME = datetime.combine(
 
 NUMBER_OF_CUSTOMERS = 5_000
 NUMBER_OF_PRODUCTS = 120
+
+CURRENCY_PRECISION = Decimal("0.01")
 
 
 random.seed(RANDOM_SEED)
@@ -324,12 +326,12 @@ SHIPPING_METHODS = ["Standard", "Two-Day", "Next-Day"]
 SHIPPING_METHOD_WEIGHTS = [80, 15, 5]
 
 SHIPPING_RATES = {
-    "Standard": 5.99,
-    "Two-Day": 12.99,
-    "Next-Day": 24.99,
+    "Standard": Decimal("5.99"),
+    "Two-Day": Decimal("12.99"),
+    "Next-Day": Decimal("24.99"),
 }
 
-FREE_SHIPPING_THRESHOLD = 125.00
+FREE_SHIPPING_THRESHOLD = Decimal("125.00")
 
 SHIPPING_PROCESSING_HOURS = {
         "Standard": (12, 48),
@@ -392,6 +394,12 @@ RETRY_SUCCESS_RATE = 0.85
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
+
+def round_currency(value):
+    return value.quantize(
+        CURRENCY_PRECISION,
+        rounding=ROUND_HALF_UP
+    )
 
 def random_date(start: date, end: date) -> date:
     """Return a random date between start and end, inclusive."""
@@ -463,7 +471,7 @@ def determine_shipping(loyalty_tier, subtotal):
     )
     
     if qualifies_for_free_shipping:
-        shipping_charge = 0.00
+        shipping_charge = Decimal("0.00")
     else:
         shipping_charge = SHIPPING_RATES[shipping_method]
         
@@ -708,15 +716,17 @@ def generate_products(
 
         for adjective in profile["adjectives"]:
             for noun in profile["nouns"]:
-                unit_price = round(
-                    random.uniform(minimum_price, maximum_price),
-                    2,
+                unit_price = round_currency(
+                    Decimal(str(random.uniform(minimum_price, maximum_price)))
                 )
 
                 # Product cost is generally 45%–70% of its selling price.
-                unit_cost = round(
-                    unit_price * random.uniform(0.45, 0.70),
-                    2,
+                cost_rate = Decimal(
+                    str(random.uniform(0.45, 0.70))
+                )
+
+                unit_cost = round_currency(
+                    unit_price * cost_rate
                 )
 
                 products.append(
@@ -909,28 +919,32 @@ def generate_order_items(orders, products):
 def finalize_orders(orders, order_items_lookup, customer_lookup):
 
     for order in orders:
-        subtotal = 0.00
+        subtotal = Decimal("0.00")
         customer = customer_lookup[order["CustomerID"]]
         loyalty_tier = customer["LoyaltyTier"]
         
         items = order_items_lookup[order["OrderID"]]
 
         for item in items:
-            subtotal += item["Quantity"] * item["UnitPrice"]
+            subtotal += item["LineTotal"]
 
         # Determine spend-based discount
-        if subtotal < 100:
-            spend_discount_rate = 0.00
-        elif subtotal < 250:
-            spend_discount_rate = 0.05
-        elif subtotal < 500:
-            spend_discount_rate = 0.10
+        if subtotal < Decimal("100.00"):
+            spend_discount_rate = Decimal("0.00")
+        elif subtotal < Decimal("250.00"):
+            spend_discount_rate = Decimal("0.05")
+        elif subtotal < Decimal("500.00"):
+            spend_discount_rate = Decimal("0.10")
         else:
-            spend_discount_rate = 0.15
+            spend_discount_rate = Decimal("0.15")
 
         # Determine promotional discount
         promotion_discount_rate = random.choices(
-            [0.00, 0.10, 0.20],
+            [
+                Decimal("0.00"),
+                Decimal("0.10"),
+                Decimal("0.20"),
+            ],
             weights=[80, 15, 5],
             k=1
         )[0]
@@ -941,7 +955,10 @@ def finalize_orders(orders, order_items_lookup, customer_lookup):
             promotion_discount_rate
         )
 
-        discount_amount = subtotal * discount_rate
+        discount_amount = round_currency(
+            subtotal * discount_rate
+        )
+        
         discounted_subtotal = subtotal - discount_amount
         
         shipping_method, shipping = determine_shipping(
@@ -949,16 +966,21 @@ def finalize_orders(orders, order_items_lookup, customer_lookup):
             discounted_subtotal
         )
         
-        tax = (discounted_subtotal + shipping) * 0.07
-        total = discounted_subtotal + shipping + tax
+        tax = round_currency(
+            (discounted_subtotal + shipping) * Decimal("0.07")
+        )
 
-        order["Subtotal"] = round(subtotal, 2)
+        total = round_currency(
+            discounted_subtotal + shipping + tax
+        )
+
+        order["Subtotal"] = round_currency(subtotal)
         order["DiscountRate"] = discount_rate
-        order["DiscountAmount"] = round(discount_amount, 2)
+        order["DiscountAmount"] = discount_amount
         order["ShippingMethod"] = shipping_method
-        order["Shipping"] = round(shipping, 2)
-        order["Tax"] = round(tax, 2)
-        order["Total"] = round(total, 2)
+        order["Shipping"] = round_currency(shipping)
+        order["Tax"] = tax
+        order["Total"] = total
 
     return orders
 

@@ -271,7 +271,7 @@
 270,Linda,Miller,linda.miller.270@yahoo.com,(364) 240-9980,Dallas,TX,South,1967,Female,2024-02-18,Small Business,Silver,Regular,Yes
 271,Abigail,Walker,abigail.walker.271@icloud.com,(352) 292-9383,Atlanta,GA,South,1998,Female,2023-08-15,Consumer,Bronze,Regular,Yes
 272,Brandon,Taylor,brandon.taylor.272@outlook.com,(240) 497-6901,St. Louis,MO,Midwest,1948,Male,2025-08-08,Enterprise,Bronze,Occasional,Yes
-273,Megan,Davis,megan.davis.273@icloud.com,(836) 474-2522,Boston,MA,Northeast,1966,Female,2023-12-16,Consumer,Bronze,Regular,Yes
+273,Megan,Davis,megan.davis.273@icloud.com,(836) 474-2522,Boston,MA,Northeast,1955,Female,2026-08-18,Consumer,Bronze,Occasional,Yes
 274,Linda,Sanchez,linda.sanchez.274@outlook.com,(315) 335-1960,Richmond,VA,South,1996,Female,2025-09-06,Consumer,Bronze,Regular,No
 275,Michael,Clark,michael.clark.275@yahoo.com,(826) 229-3140,Las Vegas,NV,West,1984,Male,2024-01-07,Small Business,Silver,Regular,Yes
 276,Sophia,Clark,sophia.clark.276@protonmail.com,(429) 885-6542,Charlotte,NC,South,1994,Female,2025-12-10,Consumer,Bronze,Regular,Yes
@@ -435,7 +435,7 @@
 434,Anthony,Flores,anthony.flores.434@gmail.com,(652) 932-5243,Richmond,VA,South,1958,Nonbinary,2025-06-02,Consumer,Bronze,Regular,Yes
 435,Melissa,Taylor,melissa.taylor.435@icloud.com,(472) 355-6403,Los Angeles,CA,West,1945,Female,2026-08-04,Small Business,Bronze,Frequent,Yes
 436,Joshua,Young,joshua.young.436@icloud.com,(905) 998-8898,Orlando,FL,South,1979,Male,2023-05-24,Small Business,Silver,Occasional,Yes
-437,Matthew,Perez,matthew.perez.437@yahoo.com,(282) 670-5750,Minneapolis,MN,Midwest,1968,Male,2023-07-05,Consumer,Platinum,Regular,Yes
+437,Matthew,Perez,matthew.perez.437@yahoo.com,(282) 670-5750,Minneapolis,MN,Midwest,1950,Male,2026-08-18,Consumer,Platinum,Regular,Yes
 438,Patricia,Harris,patricia.harris.438@gmail.com,(847) 648-4104,Indianapolis,IN,Midwest,1989,Female,2026-07-15,Consumer,Gold,Regular,Yes
 439,Megan,Nguyen,megan.nguyen.439@icloud.com,(216) 237-6558,Orlando,FL,South,1976,Female,2024-09-22,Consumer,Bronze,Regular,Yes
 440,Robert,Sanchez,robert.sanchez.440@outlook.com,(273) 237-3319,Newark,NJ,Northeast,1954,Male,2026-01-03,Enterprise,Gold,Regular,Yes
@@ -1227,9 +1227,9 @@
 1226,Anthony,Hernandez,anthony.hernandez.1226@yahoo.com,(991) 797-9297,Denver,CO,West,1971,Male,2025-05-26,Consumer,Gold,Occasional,Yes
 1227,Kevin,Lewis,kevin.lewis.1227@yahoo.com,(754) 847-6562,Nashville,TN,South,1966,Male,2025-11-10,Consumer,Silver,VIP,Yes
 1228,Nancy,Lee,nancy.lee.1228@gmail.com,(909) 638-6444,Portland,OR,West,2003,Female,2026-06-12,Consumer,Bronze,Occasional,Yes
-1229,James,Williams,james.williams.1229@outlook.com,(858) 318-6340,Pittsburgh,PA,Northeast,1949,Male,2024-04-20,Consumer,Bronze,VIP,No
-1230,Mary,Lee,mary.lee.1230@gmail.com,(490) 510-5659,Atlanta,GA,South,1980,Female,2025-05-21,Consumer,Silver,Regular,Yes
-1231,Anthony,Harris,anthony.harris.1231@icloud.com,(936) 499-7771,St. Louis,MO,Midwest,1972,Male,2024-03-30,Consumer,Gold,Regular,Yes
+1229,James,Williams,james.williams.1229@outlook.com,(334) 858-2896,Pittsburgh,PA,Northeast,2001,Male,2026-08-18,Consumer,Bronze,Occasional,Yes
+1230,John,Wilson,john.wilson.1230@outlook.com,(898) 302-5651,Providence,RI,Northeast,1985,Male,2026-07-21,Consumer,Bronze,Regular,Yes
+1231,Joshua,Flores,joshua.flores.1231@icloud.com,(936) 499-7771,Richmond,VA,South,1972,Male,2024-03-30,Consumer,Gold,Regular,Yes
 1232,Nancy,Allen,nancy.allen.1232@outlook.com,(924) 756-2734,San Francisco,CA,West,1978,Female,2023-05-23,Small Business,Bronze,Occasional,Yes
 1233,Jennifer,Rodriguez,jennifer.rodriguez.1233@gmail.com,(586) 956-1132,Nashville,TN,South,1964,Female,2026-07-07,Small Business,Silver,Regular,Yes
 1234,Mark,Taylor,mark.taylor.1234@icloud.com,(613) 731-2426,Dallas,TX,South,1979,Male,2023-02-19,Consumer,Bronze,Occasional,Yes
@@ -4769,21 +4769,21 @@
 4768,Mary,Hernandez,mary.hernandez.4768@protonmail.com,(922) 461-6559,New York,NY,Northeast,1997,Female,2023-09-18,Enterprise,Silver,Occasional,Yes
 4769,Nicole,Taylor,nicole.taylor.4769@protonmail.com,(851) 274-1422,Detroit,MI,Midwest,1972,Female,2024-01-12,Consumer,Bronze,Occasional,Yes
 4770,Daniel,Walker,daniel.walker.4770@icloud.com,(212) 426-4915,Charlotte,NC,South,1985,Male,2025-11-29,Enterprise,Bronze,Frequent,Yes
-4771,Rebecca,Clark,rebecca.clark.4771@gmail.com,(813) 748-4264,Los Angeles,CA,West,1979,Female,2023-03-24,Consumer,Silver,Frequent,Yes
-4772,Betty,Torres,betty.torres.4772@protonmail.com,(288) 265-1703,Nashville,TN,South,1968,Female,2026-05-23,Consumer,Silver,Regular,Yes
-4773,Amanda,Nguyen,amanda.nguyen.4773@yahoo.com,(988) 474-2600,Miami,FL,South,2004,Female,2023-02-27,Consumer,Bronze,Occasional,No
-4774,Betty,Miller,betty.miller.4774@icloud.com,(290) 844-1210,Atlanta,GA,South,1967,Female,2025-12-13,Consumer,Bronze,Occasional,Yes
-4775,James,Allen,james.allen.4775@protonmail.com,(926) 928-8942,Chicago,IL,Midwest,2000,Male,2024-06-20,Consumer,Silver,Regular,Yes
-4776,Thomas,Brown,thomas.brown.4776@outlook.com,(669) 781-4767,Buffalo,NY,Northeast,1979,Male,2024-03-17,Consumer,Bronze,Regular,Yes
-4777,Emma,Taylor,emma.taylor.4777@icloud.com,(407) 867-2018,Milwaukee,WI,Midwest,1946,Female,2026-06-18,Small Business,Bronze,Occasional,No
-4778,George,Lee,george.lee.4778@yahoo.com,(576) 950-7583,New York,NY,Northeast,1985,Male,2025-06-30,Small Business,Silver,Regular,Yes
-4779,Patricia,Thompson,patricia.thompson.4779@gmail.com,(671) 448-4224,New York,NY,Northeast,1982,Female,2026-06-18,Consumer,Silver,Regular,Yes
-4780,Emma,Scott,emma.scott.4780@icloud.com,(240) 949-1982,Phoenix,AZ,West,1993,Female,2026-03-15,Consumer,Bronze,Regular,Yes
-4781,Patricia,Thomas,patricia.thomas.4781@yahoo.com,(614) 388-3027,Charlotte,NC,South,1956,Female,2026-06-02,Enterprise,Bronze,Occasional,Yes
-4782,Susan,Thomas,susan.thomas.4782@icloud.com,(517) 831-3109,Richmond,VA,South,2001,Female,2023-02-03,Consumer,Silver,VIP,Yes
-4783,Amanda,Ramirez,amanda.ramirez.4783@protonmail.com,(659) 234-3326,Philadelphia,PA,Northeast,1995,Female,2023-09-30,Consumer,Bronze,Regular,No
-4784,Karen,Lee,karen.lee.4784@protonmail.com,(918) 256-8825,Seattle,WA,West,1975,Female,2023-04-13,Small Business,Silver,Regular,Yes
-4785,Steven,Torres,steven.torres.4785@protonmail.com,(986) 431-5550,Orlando,FL,South,2003,Male,2026-08-12,Consumer,Bronze,Occasional,Yes
+4771,Rebecca,Clark,rebecca.clark.4771@protonmail.com,(999) 536-2419,Los Angeles,CA,West,1998,Female,2026-08-18,Consumer,Silver,Regular,Yes
+4772,Rachel,Harris,rachel.harris.4772@yahoo.com,(626) 959-2416,Hartford,CT,Northeast,1980,Female,2026-06-19,Consumer,Bronze,VIP,Yes
+4773,James,Wright,james.wright.4773@gmail.com,(464) 256-5858,Las Vegas,NV,West,1980,Male,2024-03-12,Small Business,Bronze,Regular,Yes
+4774,Betty,Jones,betty.jones.4774@yahoo.com,(398) 787-7870,Charlotte,NC,South,1965,Female,2024-02-16,Consumer,Bronze,Occasional,Yes
+4775,Ryan,Smith,ryan.smith.4775@yahoo.com,(896) 796-9565,Atlanta,GA,South,1999,Male,2024-10-06,Consumer,Gold,Regular,Yes
+4776,Ashley,Taylor,ashley.taylor.4776@outlook.com,(751) 814-3331,Los Angeles,CA,West,1977,Female,2024-05-14,Consumer,Silver,Regular,Yes
+4777,Daniel,Jackson,daniel.jackson.4777@protonmail.com,(223) 550-8170,Indianapolis,IN,Midwest,2002,Male,2026-01-13,Consumer,Bronze,Regular,Yes
+4778,Patricia,Davis,patricia.davis.4778@icloud.com,(855) 730-3792,Milwaukee,WI,Midwest,1989,Female,2024-07-21,Consumer,Bronze,Regular,Yes
+4779,Lauren,Sanchez,lauren.sanchez.4779@icloud.com,(400) 648-8134,Orlando,FL,South,1978,Female,2023-10-11,Consumer,Bronze,Frequent,Yes
+4780,Sandra,Thomas,sandra.thomas.4780@outlook.com,(603) 784-6462,Dallas,TX,South,1970,Female,2024-12-22,Enterprise,Bronze,Regular,Yes
+4781,Charles,Brown,charles.brown.4781@icloud.com,(357) 824-3903,Denver,CO,West,1962,Male,2024-05-11,Consumer,Silver,Occasional,Yes
+4782,Barbara,Davis,barbara.davis.4782@outlook.com,(216) 530-8985,Portland,OR,West,1950,Female,2025-07-04,Small Business,Bronze,Frequent,Yes
+4783,Jennifer,Anderson,jennifer.anderson.4783@outlook.com,(882) 879-9374,Minneapolis,MN,Midwest,1984,Female,2025-12-22,Consumer,Bronze,Regular,Yes
+4784,Sarah,White,sarah.white.4784@icloud.com,(607) 854-1911,Miami,FL,South,1988,Female,2023-09-02,Small Business,Bronze,Frequent,Yes
+4785,Rachel,Torres,rachel.torres.4785@protonmail.com,(986) 431-5550,Orlando,FL,South,2003,Female,2026-08-12,Consumer,Bronze,Occasional,Yes
 4786,Andrew,Jones,andrew.jones.4786@outlook.com,(598) 219-7681,Charlotte,NC,South,1998,Male,2026-08-10,Enterprise,Bronze,Regular,Yes
 4787,Rebecca,Garcia,rebecca.garcia.4787@icloud.com,(363) 637-9253,San Francisco,CA,West,1959,Female,2023-02-14,Consumer,Bronze,Frequent,Yes
 4788,Patricia,Wright,patricia.wright.4788@outlook.com,(719) 936-6626,Boston,MA,Northeast,1953,Female,2024-07-10,Consumer,Bronze,Occasional,Yes
