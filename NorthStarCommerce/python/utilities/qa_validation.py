@@ -1,3 +1,79 @@
+"""
+===============================================================================
+Project:        Project NorthStar
+Engine:         NorthStar Commerce QA Engine
+File:           qa_validation.py
+Author:         Mat Thompson
+Created:        2026-08-03
+Last Updated:   2026-08-17
+Version:        2.0
+
+Purpose:
+    Validate the integrity, consistency, and business correctness of
+    NorthStar Commerce datasets before they are used for downstream
+    analytics, privacy protection, feature engineering, or machine
+    learning.
+
+    The QA Engine verifies that synthetic datasets satisfy business
+    rules, maintain referential integrity, and accurately represent
+    a realistic enterprise environment.
+
+Inputs:
+    - Dataset configuration
+    - Customer dataset
+    - Product dataset
+    - Order dataset
+    - Order Item dataset
+    - Payment dataset
+    - Optional Shipment dataset
+
+Outputs:
+    - QA validation report
+    - Dataset certification
+    - PASS / FAIL status
+
+Current Responsibilities:
+    - Validate referential integrity.
+    - Validate financial integrity.
+    - Validate timeline consistency.
+    - Validate business rules.
+    - Validate shipment lifecycle (when applicable).
+    - Certify datasets for downstream processing.
+
+Non-Responsibilities:
+    - Data generation
+    - Privacy protection
+    - Data standardization
+    - Feature engineering
+    - Machine learning
+    - Predictive analytics
+
+Engineering Laws:
+    1. Validate datasets without modifying them.
+    2. Validate only the datasets that exist.
+    3. Every validation must be deterministic.
+    4. Certification requires all applicable checks to pass.
+    5. Validation rules represent business truth.
+
+Architecture:
+
+                    Dataset Configuration
+                             │
+                             ▼
+              NorthStar Commerce QA Engine
+                             │
+            ┌────────────────┴────────────────┐
+            │                                 │
+            ▼                                 ▼
+    Operational Dataset             Training Dataset
+            │                                 │
+            └────────────────┬────────────────┘
+                             ▼
+                   Dataset Certification
+
+===============================================================================
+"""
+
 import csv
 from pathlib import Path
 from datetime import datetime
@@ -14,7 +90,11 @@ REPORT_WIDTH = 85
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 DATA_FOLDER = PROJECT_ROOT / "data" / "raw"
+
+TRAINING_DATA_FOLDER = PROJECT_ROOT / "data" / "training_source"
+
 
 CUSTOMERS_FILE = DATA_FOLDER / "customers.csv"
 PRODUCTS_FILE = DATA_FOLDER / "products.csv"
@@ -22,6 +102,12 @@ ORDERS_FILE = DATA_FOLDER / "orders.csv"
 ORDER_ITEMS_FILE = DATA_FOLDER / "order_items.csv"
 PAYMENTS_FILE = DATA_FOLDER / "payments.csv"
 SHIPMENTS_FILE = DATA_FOLDER / "shipments.csv"
+
+TRAINING_CUSTOMERS_FILE = TRAINING_DATA_FOLDER / "training_customer.csv"
+TRAINING_PRODUCTS_FILE = TRAINING_DATA_FOLDER / "training_products.csv"
+TRAINING_ORDERS_FILE = TRAINING_DATA_FOLDER / "training_orders.csv"
+TRAINING_ORDER_ITEMS_FILE = TRAINING_DATA_FOLDER / "training_order_items.csv"
+TRAINING_PAYMENTS_FILE = TRAINING_DATA_FOLDER / "training_payments.csv"
   
     
 
@@ -362,8 +448,23 @@ def validate_order_totals_reconciled(orders, order_items):
             + calculated_tax
         )
         
-        
         if round(calculated_total, 2) != round(order_total, 2):
+            print()
+            print("=" * 80)
+            print("MISMATCHED ORDER FOUND")
+            print(f"OrderID: {order_id}")
+            print(f"Calculated Subtotal: {calculated_subtotal}")
+            print(f"Stored Subtotal: {order['Subtotal']}")
+            print(f"Discount Rate: {order['DiscountRate']}")
+            print(f"Stored Discount Amount: {order['DiscountAmount']}")
+            print(f"Shipping: {order['Shipping']}")
+            print(f"Calculated Tax: {calculated_tax}")
+            print(f"Stored Tax: {order['Tax']}")
+            print(f"Calculated Total: {calculated_total}")
+            print(f"Stored Total: {order_total}")
+            print("=" * 80)
+            print()
+
             mismatched_orders.append(
                 {
                     "OrderID": order_id,
@@ -371,6 +472,11 @@ def validate_order_totals_reconciled(orders, order_items):
                     "OrderTotal": round(order_total, 2),
                 }
             )
+
+
+
+
+
 
     passed = len(mismatched_orders) == 0
 
@@ -787,21 +893,32 @@ def validate_shipment_status_values(shipments):
 # MAIN
 # ============================================================
 
-def main():
+def main(
+    customers_file,
+    products_file,
+    orders_file,
+    order_items_file,
+    payments_file,
+    shipments_file=None
+):
 
-    customers = load_csv(CUSTOMERS_FILE)
-    products = load_csv(PRODUCTS_FILE)
-    orders = load_csv(ORDERS_FILE)
-    order_items = load_csv(ORDER_ITEMS_FILE)
-    payments = load_csv(PAYMENTS_FILE)
-    shipments = load_csv(SHIPMENTS_FILE)
+    customers = load_csv(customers_file)
+    products = load_csv(products_file)
+    orders = load_csv(orders_file)
+    order_items = load_csv(order_items_file)
+    payments = load_csv(payments_file)
+    
+    if shipments_file is not None:
+        shipments = load_csv(shipments_file)
     
 # ============================================================
 # VALIDATIONS
 # ============================================================
     
-    results = []
+  
     
+    results = []
+
     results.append(validate_orders_have_items(orders, order_items))
     results.append(validate_unique_order_ids(orders))
     results.append(validate_orders_have_payments(orders, payments))
@@ -810,17 +927,58 @@ def main():
     results.append(validate_payments_have_orders(payments, orders))
     results.append(validate_payment_amounts_match_order_totals(orders, payments))
     results.append(validate_order_totals_reconciled(orders, order_items))
-    results.append(validate_shipments_have_orders(shipments, orders))
-    results.append(validate_shipments_have_successful_payments(shipments, payments))
-    results.append(validate_shipment_dates_follow_payments(shipments, payments))
-    results.append(validate_estimated_delivery_follows_shipment(shipments))
-    results.append(validate_shipment_status_consistency(shipments))
-    results.append(validate_delayed_shipments(shipments))
-    results.append(validate_non_delayed_shipments_valid(shipments))
-    results.append(validate_shipping_cost_match_orders(shipments, orders))
-    results.append(validate_carrier_tracking_present(shipments))
-    results.append(validate_shipment_status_values(shipments))
-    
+
+    if shipments_file is not None:
+        results.append(validate_shipments_have_orders(shipments, orders))
+        results.append(
+            validate_shipments_have_successful_payments(
+                shipments,
+                payments
+            )
+        )
+        results.append(
+            validate_shipment_dates_follow_payments(
+                shipments,
+                payments
+            )
+        )
+        results.append(
+            validate_estimated_delivery_follows_shipment(
+                shipments
+            )
+        )
+        results.append(
+            validate_shipment_status_consistency(
+                shipments
+            )
+        )
+        results.append(
+            validate_delayed_shipments(
+                shipments
+            )
+        )
+        results.append(
+            validate_non_delayed_shipments_valid(
+                shipments
+            )
+        )
+        results.append(
+            validate_shipping_cost_match_orders(
+                shipments,
+                orders
+            )
+        )
+        results.append(
+            validate_carrier_tracking_present(
+                shipments
+            )
+        )
+        results.append(
+            validate_shipment_status_values(
+                shipments
+            )
+        )
+        
 # ============================================================
 # REPORTING
 # ============================================================
@@ -916,5 +1074,21 @@ def main():
         print("End of QA Report".center(REPORT_WIDTH))
         print("=" * REPORT_WIDTH)
         
+# if __name__ == "__main__":
+#        CUSTOMERS_FILE,
+#        PRODUCTS_FILE,
+#        ORDERS_FILE,
+#        ORDER_ITEMS_FILE,
+#        PAYMENTS_FILE,
+#        SHIPMENTS_FILE,
+#    )
+    
+    
 if __name__ == "__main__":
-    main()
+    main(
+        TRAINING_CUSTOMERS_FILE,
+        TRAINING_PRODUCTS_FILE,
+        TRAINING_ORDERS_FILE,
+        TRAINING_ORDER_ITEMS_FILE,
+        TRAINING_PAYMENTS_FILE,
+    )
