@@ -1,25 +1,27 @@
-"""
+'''
 ===============================================================================
 Project:        Project NorthStar
 Engine:         Privacy Engine
 File:           privacy_engine.py
 Author:         Mat Thompson
 Created:        2026-08-13
-Last Updated:   2026-08-16
-Version:        2.0
+Last Updated:   2026-08-18
+Version:        2.1
 
 Purpose:
-    Transform enterprise datasets into privacy-preserving analytical datasets
-    while maintaining the business relationships required for downstream
-    analytics, machine learning, and predictive modeling.
+    Transform QA-certified enterprise datasets into privacy-preserving
+    analytical datasets suitable for external sharing while maintaining the
+    business relationships required for downstream analytics, machine learning,
+    and predictive modeling.
 
 Inputs:
-    - customers.csv
-    - orders.csv
-    - payments.csv
+    - QA-certified NorthStar datasets
+    - Dataset configuration
+    - Environment variable file locations
 
 Outputs:
-    - anonymous_purchase_history.csv
+    - Privacy-preserving datasets
+    - Anonymous analytical datasets
 
 Current Privacy Transformations:
     - Customer anonymization (UUID mapping)
@@ -27,18 +29,21 @@ Current Privacy Transformations:
     - Customer-scoped temporal offset mapping
     - PII removal using field whitelists
     - Relationship reconstruction
+    - Configurable dataset selection
 
 Planned Privacy Transformations:
     - Configurable privacy modes
     - Optional intermediate datasets
     - Additional privacy-preserving transformations
+    - Privacy QA certification
 
 Responsibilities:
+    - Process any QA-certified NorthStar dataset.
     - Generate dataset-scoped anonymous identifiers.
     - Apply customer-scoped temporal offsets.
     - Remove personally identifiable information (PII).
     - Preserve business relationships across datasets.
-    - Produce privacy-safe datasets for downstream engines.
+    - Produce privacy-safe datasets for external use.
 
 Non-Responsibilities:
     - Data standardization
@@ -48,6 +53,7 @@ Non-Responsibilities:
     - Machine learning
     - Predictive analytics
     - Revenue analysis
+    - Data quality validation
 
 Engineering Laws:
     1. Every field must earn its place.
@@ -55,30 +61,23 @@ Engineering Laws:
     3. No useful idea is discarded.
     4. Every transformation leaves no trace.
 
-Future Architecture:
-    External Data
-            │
-            ▼
-    Ingestion Layer
-            │
-            ▼
-    Standardization Engine
-            │
-            ▼
-    QA Validation
-            │
-            ▼
-    Privacy Engine
-            │
-            ▼
-    Feature Engineering
-            │
-            ▼
-    Machine Learning
+Architecture:
+
+                 QA Certified Data
+                       │
+           ┌───────────┴───────────┐
+           │                       │
+           ▼                       ▼
+    Internal Processing      Privacy Engine
+           │                       │
+           ▼                       ▼
+ Feature Engineering      Privacy-Safe Exports
+ Machine Learning         Portfolio
+ Analytics                Research
+                           External Sharing
 
 ===============================================================================
-"""
-
+'''
 import uuid
 import csv
 import os
@@ -87,11 +86,16 @@ import random
 from datetime import datetime, timedelta
 
 # =============================================================================
+# DATASET TO PROCESS
+# =============================================================================
+
+# DATASET = "operational"
+DATASET = "training"
+
+# =============================================================================
 # Configuration
 # =============================================================================
-customer_file = os.getenv("NORTHSTAR_CUSTOMER_FILE")
-order_file = os.getenv("NORTHSTAR_ORDER_FILE")
-payment_file = os.getenv("NORTHSTAR_PAYMENT_FILE")
+
 
 
 CUSTOMER_OUTPUT_FILE = "data/privacy_filtered/anonymous_customers.csv"
@@ -141,6 +145,43 @@ PURCHASE_HISTORY_OUTPUT_FIELDS = [
 # =============================================================================
 # Helper Functions
 # =============================================================================
+# DATASET
+def configure_dataset(dataset):
+    
+    if dataset == "operational":
+        customer_file = os.getenv("NORTHSTAR_CUSTOMER_FILE")
+        order_file = os.getenv("NORTHSTAR_ORDER_FILE")
+        payment_file = os.getenv("NORTHSTAR_PAYMENT_FILE")
+        
+    elif dataset == "training":
+        customer_file = os.getenv("NORTHSTAR_TRAINING_CUSTOMER_FILE")
+        order_file = os.getenv("NORTHSTAR_TRAINING_ORDER_FILE")
+        payment_file = os.getenv("NORTHSTAR_TRAINING_PAYMENT_FILE")
+        
+    else:
+        raise ValueError(
+            f"Unknown dataset: {dataset}"
+        )
+
+    #Validate required environment variables
+    if customer_file is None:
+        raise RuntimeError(
+            f"Missing customer file configuration for dataset: {dataset}"
+        )
+        
+    if order_file is None:
+        raise RuntimeError(
+                    f"Missing order file configuration for dataset: {dataset}"
+                )
+        
+    if payment_file is None:
+        raise RuntimeError(
+                    f"Missing payment file configuration for dataset: {dataset}"
+                )
+            
+    return customer_file, order_file, payment_file
+
+
 # LOADING
 def load_csv(file_path):
     data = []
@@ -387,23 +428,7 @@ def write_csv(file_path, data, fieldnames):
 # =============================================================================
 
 def main(customer_file, order_file, payment_file):
-    
-    #Validate required environment variables
-    if customer_file is None:
-        raise RuntimeError(
-            "Missing required environment variable: NORTHSTAR_CUSTOMER_FILE"
-        )
-        
-    if order_file is None:
-        raise RuntimeError(
-            "Missing required environment variable: NORTHSTAR_ORDER_FILE"
-        )
-        
-    if payment_file is None:
-        raise RuntimeError(
-            "Missing required environment variable: NORTHSTAR_PAYMENT_FILE"
-        )
-    
+       
     # Load customers
     customer_data = load_csv(customer_file)
     
@@ -456,7 +481,7 @@ def main(customer_file, order_file, payment_file):
     # QA Validation
     
     
-    # Save anonumized datasets
+    # Save anonymized datasets
     write_csv(
         CUSTOMER_OUTPUT_FILE,
         privacy_filtered_customer_data,
@@ -483,4 +508,13 @@ def main(customer_file, order_file, payment_file):
     
     
 if __name__ == "__main__":
-    main(customer_file, order_file, payment_file)
+
+    customer_file, order_file, payment_file = configure_dataset(
+        DATASET
+    )
+
+    main(
+        customer_file,
+        order_file,
+        payment_file,
+    )
