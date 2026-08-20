@@ -122,6 +122,8 @@ ORDER_OUTPUT_FIELDS = [
     "AnonymousOrderKey",
     "AnonymousCustomerKey",
     "OrderDateTime",
+    "Total",                    # Total retained for downstream behavioral feature engineering.
+                                # Required for AverageOrderValueTrend generation.
 ]
 # Payments Whitelist 
 PAYMENT_OUTPUT_FIELDS = [
@@ -316,7 +318,8 @@ def filter_order_data(
             "OrderDateTime": shift_datetime(
                 order["OrderDateTime"],
                 temporal_offset_days
-            )
+            ),
+            "Total": order["Total"]
         }
         privacy_filtered_order_data.append(privacy_filtered_order)
     
