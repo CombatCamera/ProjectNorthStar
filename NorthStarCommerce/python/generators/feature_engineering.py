@@ -63,47 +63,164 @@ import os
 # =============================================================================
 
 # Dataset Selection
+
 # DATASET = "operational"
 DATASET = "training"
 
 # Debug Mode
 
+DEBUG_MODE = True
+
+
 # Output Paths
 
+
 # Minimum Reliable History
+
 MINIMUM_RELIABLE_HISTORY = 10
+
+
+# Required Columns
+
+REQUIRED_CUSTOMER_COLUMNS = [
+    "AnonymousCustomerKey",
+    "JoinDate",
+]
+
+REQUIRED_ORDER_COLUMNS = [
+    "AnonymousOrderKey",
+    "AnonymousCustomerKey",
+    "OrderDateTime",
+    "Total",
+]
+
+REQUIRED_PAYMENT_COLUMNS = [
+    "AnonymousOrderKey",
+    "PaymentStatus",
+]
+
+
 
 # =============================================================================
 # LOAD DATA
 # =============================================================================
 
-NORHTSTAR_CUSTOMERS_FILE = ""
-NORTHSTAR_ORDERS_FILE = ""
-NORTHSTAR_PAYMENTS_FILE = ""
-NORTHSTAR_ORDER_ITEMS_FILE = ""
+'''
+Load all required datasets for Feature Engineering.
+'''
+def load_data(
+    customers_file,
+    orders_file,
+    payments_file,
+):
+    customers_df = pd.read_csv(customers_file)
+    orders_df = pd.read_csv(orders_file)
+    payments_df = pd.read_csv(payments_file)
+    
+    return (
+        customers_df,
+        orders_df,
+        payments_df,
+    )
+
 
 # =============================================================================
 # INPUT VALIDATION
 # =============================================================================
 
+'''
+Validate the inputs for required data.
+'''
+def validate_required_columns(df, required_columns, dataset_name):
+    
+    missing_columns = []
+    
+    for column in required_columns:
+        if column not in df.columns:
+           missing_columns.append(column)
+        
+    if missing_columns:
+        raise RuntimeError(
+            f"{dataset_name} is missing required columns: "
+            f"{missing_columns}"
+        )
 
+
+def validate_dataframe_not_empty(df, dataset_name):
+
+    if df.empty:
+        raise RuntimeError(
+            f"{dataset_name} is empty."
+        )
+    return
+
+
+def validate_inputs(
+    customers_df,
+    orders_df,
+    payments_df,
+):
+
+    # Customer required columns
+    validate_dataframe_not_empty(
+        customers_df,
+        "customers",
+    )
+    
+    validate_required_columns(
+        customers_df,
+        REQUIRED_CUSTOMER_COLUMNS,
+        "customers"
+    )
+    
+    
+    # Orders required columns
+    validate_dataframe_not_empty(
+        orders_df,
+        "orders",
+    )
+    
+    validate_required_columns(
+        orders_df,
+        REQUIRED_ORDER_COLUMNS,
+        "orders"
+    )
+    
+    
+    # Payments required columns
+    validate_dataframe_not_empty(
+        payments_df,
+        "payments",
+    )
+    
+    validate_required_columns(
+        payments_df,
+        REQUIRED_PAYMENT_COLUMNS,
+        "payments"
+    )
+    
+    
+    if DEBUG_MODE:
+        print("✓ Customers validated")
+        print("✓ Orders validated")
+        print("✓ Payments validated")
 
 # =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
-
+'''
+Switches between operational and training datasets.
+'''
 def configure_dataset(dataset):
     
     if dataset == "operational":
         customers_file = os.getenv("NORTHSTAR_CUSTOMER_FILE")
         orders_file = os.getenv("NORTHSTAR_ORDER_FILE")
         payments_file = os.getenv("NORTHSTAR_PAYMENT_FILE")
-        order_items_file = os.getenv("NORTHSTAR_ORDER_ITEMS_FILE")
     elif dataset == "training":
-        customers_file = os.getenv("NORTHSTAR_TRAINING_CUSTOMER_FILE")
-        orders_file = os.getenv("NORTHSTAR_TRAINING_ORDER_FILE")
-        payments_file = os.getenv("NORTHSTAR_TRAINING_PAYMENT_FILE")
-        order_items_file = os.getenv("NORTHSTAR_TRAINING_ORDER_ITEMS_FILE")
+        customers_file = os.getenv("NORTHSTAR_ANONYMIZED_CUSTOMER_FILE")
+        orders_file = os.getenv("NORTHSTAR_ANONYMIZED_ORDER_FILE")
+        payments_file = os.getenv("NORTHSTAR_ANONYMIZED_PAYMENT_FILE")
     else:
         raise ValueError(
             f"Unknown dataset: {dataset}"
@@ -113,31 +230,9 @@ def configure_dataset(dataset):
         customers_file,
         orders_file,
         payments_file,
-        order_items_file,
     )
 
-
-'''
-Load all required datasets for Feature Engineering.
-'''
-def load_data(
-    customers_file,
-    orders_file,
-    payments_file,
-    order_items_file,
-):
-    customers_df = pd.read_csv(customers_file)
-    orders_df = pd.read_csv(orders_file)
-    payments_df = pd.read_csv(payments_file)
-    order_items_df = pd.read_csv(order_items_file)
     
-    return (
-        customers_df,
-        orders_df,
-        payments_df,
-        order_items_df
-    )
-
 # =============================================================================
 # FEATURE FAMILIES
 # =============================================================================
@@ -180,7 +275,6 @@ def main():
         customers_file,
         orders_file,
         payments_file,
-        order_items_file,
     ) = configure_dataset(DATASET)
     
 
@@ -189,18 +283,21 @@ def main():
         customers_df,
         orders_df,
         payments_df,
-        order_items_df,
     ) = load_data(
         customers_file,
         orders_file,
         payments_file,
-        order_items_file,
     )
+  
+    
+    # Validation
+    validate_inputs(
+        customers_df,
+        orders_df,
+        payments_df,
+    )
+    
 
-    print(customers_df.head())
-    print(orders_df.head())
-    print(payments_df.head())
-    print(order_items_df.head())
     # Generate temporal features
     
     # Assemble dataset
