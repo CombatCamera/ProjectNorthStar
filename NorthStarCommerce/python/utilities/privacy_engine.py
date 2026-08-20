@@ -5,8 +5,8 @@ Engine:         Privacy Engine
 File:           privacy_engine.py
 Author:         Mat Thompson
 Created:        2026-08-13
-Last Updated:   2026-08-18
-Version:        2.1
+Last Updated:   2026-08-20
+Version:        2.1.1
 
 Purpose:
     Transform QA-certified enterprise datasets into privacy-preserving
@@ -44,6 +44,9 @@ Responsibilities:
     - Remove personally identifiable information (PII).
     - Preserve business relationships across datasets.
     - Produce privacy-safe datasets for external use.
+    - Ensures customer-scoped temporal offsets preserve 
+      event relationships while preventing anonymized 
+      events from extending into the future.
 
 Non-Responsibilities:
     - Data standardization
@@ -223,16 +226,75 @@ def generate_anonymous_order_mapping(order_data):
 # TEMPORAL OFFSET MAPPING
 def generate_temporal_offset_mapping(
     customer_data,
+    order_data,
+    payment_data,
     anonymous_customer_map
 ):
+    today = datetime.now()
+    
     customer_temporal_offset_map = {}
+    latest_event_date_by_customer = {}
+    order_customer_lookup ={}
+    
+    
+    for customer in customer_data:
+        customer_id = customer["CustomerID"]
+        latest_event_date_by_customer[customer_id] = datetime.strptime(
+            customer["JoinDate"],
+            "%Y-%m-%d"
+        )
+    
+    order_customer_lookup = {
+        order["OrderID"]: order["CustomerID"]
+        for order in order_data
+    }
+    
+    for order in order_data:
+        customer_id = order["CustomerID"]
+        order_date_time = datetime.strptime(
+            order["OrderDateTime"],
+            "%Y-%m-%d %H:%M:%S"
+        )
+        if order_date_time > latest_event_date_by_customer[customer_id]:
+            latest_event_date_by_customer[customer_id] = order_date_time
+        
+        
+    for payment in payment_data:
+        order_id = payment["OrderID"]
+        customer_id = order_customer_lookup[order_id]
+        
+        payment_date_time = datetime.strptime(
+            payment["PaymentDateTime"],
+            "%Y-%m-%d %H:%M:%S"
+        )
+        if payment_date_time > latest_event_date_by_customer[customer_id]:
+            latest_event_date_by_customer[customer_id] = payment_date_time
+    
+    
+    
+    days_until_future_boundary = (
+        today - latest_event_date_by_customer[customer_id]
+    )
+    
+    days_until_today = (
+        today
+        - latest_event_date_by_customer[customer_id]
+    ).days
+    
+   
+    maximum_safe_offsset = min(
+        MAX_TEMPORAL_OFFSET_DAYS,
+        days_until_today,
+    )
+    
+    
     
     for customer in customer_data:
         customer_id = customer["CustomerID"]
         anonymous_customer_key = anonymous_customer_map[customer_id]
         temporal_offset_days = random.randint(
             MIN_TEMPORAL_OFFSET_DAYS,
-            MAX_TEMPORAL_OFFSET_DAYS
+            maximum_safe_offsset,
         )
         customer_temporal_offset_map[
             anonymous_customer_key
@@ -447,6 +509,8 @@ def main(customer_file, order_file, payment_file):
     anonymous_order_map = generate_anonymous_order_mapping(order_data)
     customer_temporal_offset_map = generate_temporal_offset_mapping(
         customer_data,
+        order_data,
+        payment_data,
         anonymous_customer_map
     )
     

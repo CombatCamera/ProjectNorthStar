@@ -232,18 +232,58 @@ def configure_dataset(dataset):
         payments_file,
     )
 
+
+def generate_successful_purchase_history(orders_df, payments_df):
+
+    merged_df = pd.merge(
+        orders_df,
+        payments_df,
+        on="AnonymousOrderKey",
+    ) 
+
+    purchase_history = merged_df[
+        merged_df["PaymentStatus"] == "Successful"
+    ]
     
+    successful_purchase_history = purchase_history[
+        [
+            "AnonymousCustomerKey",
+            "AnonymousOrderKey",
+            "OrderDateTime",
+            "Total",
+        ]
+    ].copy()
+
+    successful_purchase_history["OrderDateTime"] = pd.to_datetime(
+        successful_purchase_history["OrderDateTime"]
+    )
+
+    print(successful_purchase_history["OrderDateTime"].dtype)
+    
+    
+    return successful_purchase_history
+
 # =============================================================================
 # FEATURE FAMILIES
 # =============================================================================
      
 # Generate reusable time-based customer behavior features that describe
 # a customer's purchasing history and current purchasing state.
-def generate_temporal_features():
-    pass
+def generate_temporal_features(successful_purchase_history):
     
+    customer_groups = successful_purchase_history.groupby(
+        "AnonymousCustomerKey"
+    )
     
 
+    last_purchase_dates = customer_groups["OrderDateTime"].max()
+    
+    
+    
+    print(last_purchase_dates)
+    print(last_purchase_dates.dtype)
+    
+    
 def generate_purchase_features():
     pass
 
@@ -297,8 +337,20 @@ def main():
         payments_df,
     )
     
+    
+    # Call helpers
+    successful_purchase_history = generate_successful_purchase_history(
+        orders_df, payments_df,
+    )
+
+
 
     # Generate temporal features
+    temporal_features = generate_temporal_features(
+        successful_purchase_history
+    )
+    
+    
     
     # Assemble dataset
     
