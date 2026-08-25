@@ -57,6 +57,8 @@ the core architecture.
 
 import pandas as pd
 import os
+from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 
 # =============================================================================
 # CONFIGURATION
@@ -79,6 +81,8 @@ DEBUG_MODE = True
 
 MINIMUM_RELIABLE_HISTORY = 10
 
+# Rounding Precision
+CURRENCY_PRECISION = Decimal("0.01")
 
 # Required Columns
 
@@ -233,6 +237,31 @@ def configure_dataset(dataset):
     )
 
 
+def round_currency(value):
+    value = Decimal(str(value))
+    
+    return value.quantize(
+        CURRENCY_PRECISION,
+        rounding=ROUND_HALF_UP
+    )
+    
+    
+# =============================================================================
+# Write Output
+# =============================================================================
+
+def save_feature_dataset(feature_dataset, output_path):
+    feature_dataset.to_csv(
+        output_path,
+        index=False,
+)
+
+    
+    
+# =============================================================================
+# Business Data Preperation
+# =============================================================================
+
 def generate_successful_purchase_history(orders_df, payments_df):
 
     merged_df = pd.merge(
@@ -257,59 +286,285 @@ def generate_successful_purchase_history(orders_df, payments_df):
     successful_purchase_history["OrderDateTime"] = pd.to_datetime(
         successful_purchase_history["OrderDateTime"]
     )
-
-    print(successful_purchase_history["OrderDateTime"].dtype)
-    
-    
+   
     return successful_purchase_history
 
+
+# Purchase Intervals
+#
+# Business Question:
+# How much time elapsed between each successful purchase
+# for every customer?
+
+def generate_purchase_intervals(successful_purchase_history):
+    
+    purchase_intervals = successful_purchase_history[
+        [
+            "AnonymousCustomerKey",
+            "OrderDateTime",
+        ]
+    ].copy()
+    
+    purchase_intervals = purchase_intervals.sort_values(
+        by =[
+            "AnonymousCustomerKey",
+            "OrderDateTime"
+        ]
+    )
+    
+    customer_purchase_groups = purchase_intervals.groupby(
+        "AnonymousCustomerKey"
+    )
+    
+    previous_order_dates = customer_purchase_groups[
+        "OrderDateTime"
+    ].shift()
+    
+    days_between_purchases = (
+            purchase_intervals["OrderDateTime"]
+            - previous_order_dates
+        ).dt.days
+    
+    days_between_purchases.name = "DaysBetweenPurchases"
+    
+    purchase_intervals["DaysBetweenPurchases"] = (
+        days_between_purchases
+    )
+    
+    return purchase_intervals
+    
+    
+def generate_purchase_interval_changes(purchase_intervals):
+    purchase_interval_changes = purchase_intervals.copy()
+    
+    purchase_interval_changes["PurchaseIntervalChange"] = (
+        purchase_interval_changes
+        .groupby("AnonymousCustomerKey")["DaysBetweenPurchases"]
+        .diff()
+    )
+    
+    return purchase_interval_changes
+    
 # =============================================================================
 # FEATURE FAMILIES
 # =============================================================================
      
 # Generate reusable time-based customer behavior features that describe
 # a customer's purchasing history and current purchasing state.
-def generate_temporal_features(successful_purchase_history):
+def generate_temporal_features(
+    successful_purchase_history,
+    purchase_intervals,
+    evaluation_date,
+):
     
+# Days since last purchase    
     customer_groups = successful_purchase_history.groupby(
         "AnonymousCustomerKey"
     )
     
-
     last_purchase_dates = customer_groups["OrderDateTime"].max()
     
+    days_since_last_purchase = (
+        evaluation_date
+        - last_purchase_dates
+    ).dt.days
+
+    days_since_last_purchase.name = "DaysSinceLastPurchase"
     
     
-    print(last_purchase_dates)
-    print(last_purchase_dates.dtype)
+# Average Days Between Purchases
+    
+    average_days_between_purchases = purchase_intervals.groupby(
+        "AnonymousCustomerKey"
+    )["DaysBetweenPurchases"].mean()
+    
+    average_days_between_purchases.name = "AverageDaysBetweenPurchases"
     
     
-def generate_purchase_features():
-    pass
+# Build Temporal features
+
+    days_since_last_purchase = days_since_last_purchase.reset_index()
+    
+    average_days_between_purchases = (
+        average_days_between_purchases.reset_index()
+    )
+    
+    temporal_features = pd.merge(
+        days_since_last_purchase,
+        average_days_between_purchases,
+        on="AnonymousCustomerKey",
+    ) 
+       
+    return temporal_features
+    
+    
+def generate_purchase_features(successful_purchase_history,):
+    
+# Successful Order Count
+
+    successful_order_count = successful_purchase_history.groupby(
+        "AnonymousCustomerKey"
+    ).size()
+    
+    successful_order_count.name = "SuccessfulOrderCount"
+    
+
+# Average Order Value
+    average_order_value = successful_purchase_history.groupby(
+        "AnonymousCustomerKey"
+    )["Total"].mean()
+
+    average_order_value.name = ("AverageOrderValue")
+    
+    average_order_value = average_order_value.apply(
+        round_currency
+    )
 
 
+# Purchase Frequency
 
-def generate_behavior_features():
-    pass
+    first_purchase_date = successful_purchase_history.groupby(
+        "AnonymousCustomerKey"
+    )["OrderDateTime"].min()
+    
+    last_purchase_date = successful_purchase_history.groupby(
+        "AnonymousCustomerKey"
+    )["OrderDateTime"].max()
+    
+    active_purchase_days = (
+        last_purchase_date
+        - first_purchase_date
+    ).dt.days
+
+    purchase_frequency = (
+        successful_order_count 
+        / active_purchase_days
+    )
+    
+    purchase_frequency.name = ("PurchaseFrequency")
 
 
+# Assemble Purchase Features
+    successful_order_count = (
+        successful_order_count.reset_index()
+    )
+     
+    average_order_value = (
+        average_order_value.reset_index()
+    )
+    
+    purchase_frequency = (
+        purchase_frequency.reset_index()
+    )
+
+    purchase_features = pd.merge(
+        successful_order_count,
+        average_order_value,
+        on="AnonymousCustomerKey"
+    )
+
+    purchase_features = pd.merge(
+        purchase_features,
+        purchase_frequency,
+        on="AnonymousCustomerKey"
+    )
+
+    return purchase_features
+
+# Behavior Features
+
+def meets_minimum_reliable_history(history):
+    number_of_intervals = len(history)
+    return number_of_intervals >= MINIMUM_RELIABLE_HISTORY
+    
 
 
+def generate_purchase_interval_stddev(purchase_intervals):
+    
+    # Minimum Reliable History
+    if not meets_minimum_reliable_history(purchase_intervals):
+        return pd.NA
+
+    # Purchase Interval Standard Deviation
+    return purchase_intervals.std()
+
+
+def generate_average_interval_change(purchase_interval_changes):
+    
+    # Minimum Reliable History
+    if not meets_minimum_reliable_history(purchase_interval_changes):
+        return pd.NA
+    
+    # Average Purchase Interval Change
+    return purchase_interval_changes["PurchaseIntervalChange"].mean()
+
+def generate_behavior_features(
+    purchase_intervals, 
+    purchase_interval_changes
+):
+    
+    behavior_records = []
+    
+    # Group Customers
+    for customer_key in purchase_intervals["AnonymousCustomerKey"].unique():
+        custmoer_intervals = purchase_intervals[
+            purchase_intervals["AnonymousCustomerKey"] == customer_key
+        ]
+    
+        customer_interval_changes = purchase_interval_changes[
+            purchase_interval_changes["AnonymousCustomerKey"] == customer_key
+        ]
+        
+        # For Each Customer, Calculate Featuers
+        purchase_interval_stddev = generate_purchase_interval_stddev(
+            custmoer_intervals["DaysBetweenPurchases"]
+        )
+    
+        average_interval_change = generate_average_interval_change(
+            customer_interval_changes
+        )
+        
+        customer_behavior_record = {
+            "AnonymousCustomerKey": customer_key,
+            "PurchaseIntervalStdDev": purchase_interval_stddev,
+            "AverageIntervalChange": average_interval_change
+        }
+        
+        # Append
+        behavior_records.append(customer_behavior_record)
+    
+    
+    # Return DataFrame
+    return pd.DataFrame(behavior_records)
+            
+            
 # =============================================================================
 # ASSEMBLER
 # =============================================================================
 
-def assemble_feature_dataset():
-    pass
+def assemble_feature_dataset(
+    temporal_features, 
+    purchase_features, 
+    behavior_features 
+):
+    
+    featrue_dataset = temporal_features.merge(
+        purchase_features,
+        on="AnonymousCustomerKey",
+        how="left",
+    )
 
+    featrue_dataset = featrue_dataset.merge(
+        behavior_features,
+        on="AnonymousCustomerKey",
+        how="left",
+    )
 
-
-
+    return featrue_dataset
 # =============================================================================
-# MAIN
+# Feature Pipline
 # =============================================================================
-
-def main():
+def build_feature_dataset():
     # Select data
     (
         customers_file,
@@ -328,7 +583,7 @@ def main():
         orders_file,
         payments_file,
     )
-  
+    
     
     # Validation
     validate_inputs(
@@ -338,24 +593,61 @@ def main():
     )
     
     
-    # Call helpers
+    # Call Business Data Preparation
     successful_purchase_history = generate_successful_purchase_history(
         orders_df, payments_df,
     )
 
+    purchase_intervals = generate_purchase_intervals(
+    successful_purchase_history
+    )
+
+    purchase_interval_changes = generate_purchase_interval_changes(
+        purchase_intervals
+    )
+
+    
+    evaluation_date = datetime.now()
 
 
     # Generate temporal features
     temporal_features = generate_temporal_features(
-        successful_purchase_history
+        successful_purchase_history,
+        purchase_intervals,
+        evaluation_date,
+    )
+    
+    # Generate Purchase Features
+    purchase_features = generate_purchase_features(
+        successful_purchase_history,
+    )
+    
+    # Generate Behavior Features
+    behavior_features = generate_behavior_features(
+        purchase_intervals,
+        purchase_interval_changes
     )
     
     
-    
     # Assemble dataset
+    feature_dataset = assemble_feature_dataset(
+        temporal_features,
+        purchase_features,
+        behavior_features
+    )
+
+    return feature_dataset, successful_purchase_history
+
+
+def main():
     
-    # Savee output
     
+    feature_dataset, successful_purchase_history = build_feature_dataset()
+
+
+    
+
+
 
 if __name__ == "__main__":
     main()
