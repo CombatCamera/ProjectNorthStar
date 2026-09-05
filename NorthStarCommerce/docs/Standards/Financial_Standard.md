@@ -1,135 +1,176 @@
-Project NorthStar
-NorthStar Financial Standard
+# Project NorthStar Financial Standard
 
-Version: 1.0
+**Version:** 1.0  
+**Status:** Approved  
+**Last Updated:** 2026-08-18
 
-Status: Approved
+---
 
-Last Updated: 2026-08-18
+## Purpose
 
-Purpose
+The NorthStar Financial Standard defines the official monetary calculation
+rules for every component of the NorthStar platform.
 
-The NorthStar Financial Standard defines the official monetary calculation rules for every component of the NorthStar platform.
+Its purpose is to ensure that all monetary calculations remain deterministic,
+auditable, and consistent across the Generation Engine, QA Engine, Training
+Population Generator, Privacy Engine, Feature Engineering, Machine Learning
+pipelines, and future NorthStar Live services.
 
-Its purpose is to ensure that all monetary calculations remain deterministic, auditable, and consistent across the Generation Engine, QA Engine, Training Population Generator, Privacy Engine, Feature Engineering, Machine Learning pipelines, and future NorthStar Live services.
+This standard eliminates floating-point precision errors and establishes a
+single authoritative monetary calculation policy for the platform.
 
-This standard eliminates floating-point precision errors and establishes a single authoritative monetary calculation policy for the platform.
+## Scope
 
-Scope
+This standard applies to every NorthStar component that creates, modifies,
+validates, or consumes monetary values.
 
-This standard applies to every component that creates, modifies, validates, or consumes monetary values.
+This includes:
 
-Examples include:
+- Generation Engine
+- QA Engine
+- Training Population Generator
+- Feature Engineering
+- Machine Learning datasets
+- Privacy Engine when processing monetary fields
+- Future NorthStar Live services
 
-Generation Engine
-QA Engine
-Training Population Generator
-Feature Engineering
-Machine Learning datasets
-Privacy Engine (when processing monetary fields)
-Future NorthStar Live services
-Engineering Principles
+---
 
-The Financial Standard follows the following architectural principles:
+## Engineering Principles
 
-Monetary calculations must be deterministic.
-Every engine shall produce identical financial results given identical inputs.
-Monetary calculations shall never depend upon floating-point behavior.
-QA validates compliance with this standard rather than implementing independent financial rules.
-Financial calculations shall remain simple, maintainable, and teachable.
-Monetary Representation
-Standard
+The NorthStar Financial Standard follows these architectural principles:
 
-All monetary calculations shall use Python's Decimal type.
+1. Monetary calculations must be deterministic.
+2. Every engine must produce identical financial results given identical inputs.
+3. Monetary calculations must never depend on binary floating-point behavior.
+4. QA validates compliance with this standard rather than implementing
+   independent financial rules.
+5. Financial calculations should remain simple, maintainable, and teachable.
 
-Binary floating-point (float) shall not be used for financial calculations.
 
-Rationale
+## Monetary Representation
 
-Decimal provides exact decimal arithmetic appropriate for currency calculations and eliminates binary floating-point precision artifacts.
+### Standard
 
-Monetary Precision
+All monetary calculations must use Python's `Decimal` type.
 
-All stored monetary values shall be rounded to two decimal places.
+Binary floating-point (`float`) must not be used for financial calculations.
+
+### Rationale
+
+`Decimal` provides exact decimal arithmetic appropriate for currency
+calculations and prevents binary floating-point precision artifacts from
+affecting NorthStar's financial values.
+
+---
+
+## Monetary Precision
+
+All stored monetary values must be rounded to two decimal places.
 
 This includes, but is not limited to:
 
-UnitPrice
-UnitCost
-LineTotal
+- `UnitPrice`
+- `UnitCost`
+- `LineTotal`
+- `Subtotal`
+- `DiscountAmount`
+- `Shipping`
+- `Tax`
+- `Total`
+- `PaymentAmount`
+
+Fractions of a cent must not propagate into downstream monetary calculations.
+
+## Rounding Method
+
+NorthStar uses `ROUND_HALF_UP` for all monetary rounding.
+
+### Examples
+
+| Calculated Value | Stored Value |
+| ---------------: | -----------: |
+|         `33.915` |      `33.92` |
+|         `18.325` |      `18.33` |
+|         `14.994` |      `14.99` |
+
+All monetary values requiring rounding must follow this policy consistently.
+
+## Calculation Order
+
+Every order must be calculated in the following sequence:
+
+<div align="center">
+<pre>
 Subtotal
-DiscountAmount
-Shipping
-Tax
-Total
-PaymentAmount
-
-Fractions of a cent shall not propagate into downstream monetary calculations.
-
-Rounding Method
-
-NorthStar uses:
-
-ROUND_HALF_UP
-
-for all monetary rounding.
-
-Examples:
-
-Value	Stored
-33.915	33.92
-18.325	18.33
-14.994	14.99
-Calculation Order
-
-Every order shall be calculated in the following sequence:
-
-Subtotal
-    ↓
+↓
 Discount
-    ↓
+↓
 Round Discount
-    ↓
+↓
 Discounted Subtotal
-    ↓
+↓
 Shipping
-    ↓
+↓
 Tax
-    ↓
+↓
 Round Tax
-    ↓
+↓
 Final Total
-    ↓
+↓
 Round Final Total
+</pre>
+</div>
 
 Each monetary stage becomes the authoritative value for all subsequent calculations.
 
-Shared Monetary Utility
+## Monetary Rounding Utility
 
-All monetary rounding shall be performed through the shared utility:
+All NorthStar components that perform monetary rounding must use the
+`round_currency()` function.
 
-round_currency()
+Every implementation of `round_currency()` must apply the same financial
+standard:
 
-Individual components shall not implement independent rounding logic.
+- Convert monetary values to `Decimal`.
+- Quantize values to `Decimal("0.01")`.
+- Use `ROUND_HALF_UP` rounding.
 
-Future changes to monetary precision or rounding behavior shall be implemented within this shared utility.
+Components must not introduce independent monetary rounding rules.
 
-QA Certification
+---
 
-The QA Engine shall reproduce the exact monetary calculations defined by this standard.
+## QA Certification
 
-QA exists to verify compliance with the Financial Standard rather than to implement alternative financial calculations.
+The QA Engine must reproduce the same monetary calculation and rounding rules
+used by the Generation Engine.
 
-Generation Engine and QA Engine shall always follow identical monetary rules.
+QA exists to verify compliance with the NorthStar Financial Standard, not to
+define an alternative financial calculation policy.
 
-Design Philosophy
+Financial QA must validate that generated monetary values reconcile according
+to the approved representation, precision, rounding method, and calculation
+order.
 
-The NorthStar Financial Standard reflects the broader architectural philosophy of Project NorthStar:
+## Design Philosophy
 
-Define the standard once. Implement it everywhere.
+NorthStar follows a simple rule for financial logic:
 
-Business rules shall exist as shared platform standards rather than duplicated logic across independent components.
+> **Define the standard once. Implement it consistently everywhere.**
 
-Version History
-Version	Date	Description
-1.0	2026-08-18	Initial Financial Standard established. Adopted Decimal, ROUND_HALF_UP, shared monetary utility, and standardized calculation order across the Generation Engine and QA Engine.
+Financial rules are platform-wide standards.
+
+Individual engines and components may implement the calculations required for
+their responsibilities, but they must not redefine NorthStar's monetary
+representation, precision, rounding method, or calculation rules.
+
+This keeps financial behavior deterministic, auditable, maintainable, and
+consistent throughout the platform.
+
+---
+
+## Version History
+
+| Version | Date       | Description                                                                                                                 |
+| ------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 1.0     | 2026-08-18 | Established the NorthStar Financial Standard using `Decimal`, two-decimal precision, and `ROUND_HALF_UP` monetary rounding. |

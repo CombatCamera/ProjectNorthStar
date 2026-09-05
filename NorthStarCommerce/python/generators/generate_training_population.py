@@ -24,7 +24,7 @@ Inputs:
     - Probability distributions
 
 Outputs:
-    - training_customers.csv
+    - training_customer.csv
     - training_categories.csv
     - training_products.csv
     - training_orders.csv
@@ -69,7 +69,7 @@ Architecture:
 ===============================================================================
 """
 
-from generate_ecommerce_data import (
+from generators.generate_ecommerce_data import (
     generate_customers,
     generate_categories,
     generate_products,
@@ -78,7 +78,6 @@ from generate_ecommerce_data import (
     finalize_orders,
     generate_payments,
     build_order_items_lookup,
-    build_product_lookup,
     write_csv,
 )
 
@@ -109,7 +108,7 @@ TRAINING_DATA_FOLDER.mkdir(
 
 TRAINING_RANDOM_SEED = 8675309
 TRAINING_START_DATE = date(2023, 1, 1)
-TRAINING_END_DATE =  date.today()
+TRAINING_END_DATE = date.today()
 TRAINING_NUMBER_OF_CUSTOMERS = 5000
 
 # =============================================================================
@@ -200,6 +199,7 @@ def main() -> None:
         ],
     )
 
+
     write_csv(
         TRAINING_CATEGORIES_FILE,
         categories,
@@ -208,6 +208,7 @@ def main() -> None:
             "CategoryName",
         ],
     )
+
 
     write_csv(
         TRAINING_PRODUCTS_FILE,
@@ -222,6 +223,7 @@ def main() -> None:
             "IsActive",
         ],
     )
+
 
     write_csv(
         TRAINING_ORDERS_FILE,
@@ -240,6 +242,7 @@ def main() -> None:
         ],
     )
 
+
     write_csv(
         TRAINING_ORDER_ITEMS_FILE,
         order_items,
@@ -252,6 +255,7 @@ def main() -> None:
             "LineTotal",
         ],
     )
+
 
     write_csv(
         TRAINING_PAYMENTS_FILE,

@@ -5,7 +5,7 @@ Engine:         Privacy Engine
 File:           privacy_engine.py
 Author:         Mat Thompson
 Created:        2026-08-13
-Last Updated:   2026-08-20
+Last Updated:   2026-08-30
 Version:        2.1.1
 
 Purpose:
@@ -35,7 +35,7 @@ Planned Privacy Transformations:
     - Configurable privacy modes
     - Optional intermediate datasets
     - Additional privacy-preserving transformations
-    - Privacy QA certification
+
 
 Responsibilities:
     - Process any QA-certified NorthStar dataset.
@@ -44,9 +44,8 @@ Responsibilities:
     - Remove personally identifiable information (PII).
     - Preserve business relationships across datasets.
     - Produce privacy-safe datasets for external use.
-    - Ensures customer-scoped temporal offsets preserve 
-      event relationships while preventing anonymized 
-      events from extending into the future.
+    - Ensure customer-scoped temporal offsets preserve event relationships while
+      preventing anonymized events from extending into the future.
 
 Non-Responsibilities:
     - Data standardization
@@ -86,6 +85,7 @@ import csv
 import os
 import random
 
+from pathlib import Path
 from datetime import datetime, timedelta
 
 # =============================================================================
@@ -96,21 +96,42 @@ from datetime import datetime, timedelta
 DATASET = "training"
 
 # =============================================================================
+# PROJECT PATHS
+# =============================================================================
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+PRIVACY_OUTPUT_FOLDER = (
+    PROJECT_ROOT / "data" / "privacy_filtered"
+)
+
+PRIVACY_OUTPUT_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True,
+)
+
+CUSTOMER_OUTPUT_FILE = (
+    PRIVACY_OUTPUT_FOLDER / "anonymous_customers.csv"
+)
+
+ORDER_OUTPUT_FILE = (
+    PRIVACY_OUTPUT_FOLDER / "anonymous_orders.csv"
+)
+
+PAYMENT_OUTPUT_FILE = (
+    PRIVACY_OUTPUT_FOLDER / "anonymous_payments.csv"
+)
+
+PURCHASE_HISTORY_OUTPUT_FILE = (
+    PRIVACY_OUTPUT_FOLDER / "anonymous_purchase_history.csv"
+)
+
+# =============================================================================
 # Configuration
 # =============================================================================
 
-
-
-CUSTOMER_OUTPUT_FILE = "data/privacy_filtered/anonymous_customers.csv"
-
-ORDER_OUTPUT_FILE = "data/privacy_filtered/anonymous_orders.csv"
-
-PAYMENT_OUTPUT_FILE = "data/privacy_filtered/anonymous_payments.csv"
-
-PURCHASE_HISTORY_OUTPUT_FILE = "data/privacy_filtered/anonymous_purchase_history.csv"
-
-
 MIN_TEMPORAL_OFFSET_DAYS = -365
+
 MAX_TEMPORAL_OFFSET_DAYS = 365
 
 
@@ -126,8 +147,9 @@ ORDER_OUTPUT_FIELDS = [
     "AnonymousCustomerKey",
     "OrderDateTime",
     "Total",                    # Total retained for downstream behavioral feature engineering.
-                                # Required for AverageOrderValueTrend generation.
+                                # Required for AverageOrderValue generation.
 ]
+
 # Payments Whitelist 
 PAYMENT_OUTPUT_FIELDS = [
     "AnonymousOrderKey",
@@ -136,7 +158,7 @@ PAYMENT_OUTPUT_FIELDS = [
     "PaymentStatus",
 ]
 
-#Purchase history output
+# Purchase History Output
 PURCHASE_HISTORY_OUTPUT_FIELDS = [
     "AnonymousCustomerKey",
     "JoinDate",
@@ -150,6 +172,7 @@ PURCHASE_HISTORY_OUTPUT_FIELDS = [
 # =============================================================================
 # Helper Functions
 # =============================================================================
+
 # DATASET
 def configure_dataset(dataset):
     
@@ -199,6 +222,7 @@ def load_csv(file_path):
 
     return data
 
+
 # CUSTOMER MAPPING
 def generate_anonymous_customer_mapping(customer_data):
     
@@ -210,6 +234,7 @@ def generate_anonymous_customer_mapping(customer_data):
         anonymous_customer_map[customer_id] = anonymous_customer_key
         
     return anonymous_customer_map
+
 
 # ORDER MAPPING
 def generate_anonymous_order_mapping(order_data):
@@ -223,6 +248,25 @@ def generate_anonymous_order_mapping(order_data):
         
     return anonymous_order_map
 
+
+# MAXIMUM SAFE OFFSET
+def calculate_maximum_safe_offset(
+    today,
+    latest_event_date,
+):
+    days_until_today = (
+        today
+        - latest_event_date
+    ).days
+
+    maximum_safe_offset = min(
+        MAX_TEMPORAL_OFFSET_DAYS,
+        days_until_today,
+    )
+
+    return maximum_safe_offset
+
+
 # TEMPORAL OFFSET MAPPING
 def generate_temporal_offset_mapping(
     customer_data,
@@ -234,7 +278,7 @@ def generate_temporal_offset_mapping(
     
     customer_temporal_offset_map = {}
     latest_event_date_by_customer = {}
-    order_customer_lookup ={}
+    order_customer_lookup = {}
     
     
     for customer in customer_data:
@@ -272,36 +316,26 @@ def generate_temporal_offset_mapping(
     
     
     
-    days_until_future_boundary = (
-        today - latest_event_date_by_customer[customer_id]
-    )
-    
-    days_until_today = (
-        today
-        - latest_event_date_by_customer[customer_id]
-    ).days
-    
-   
-    maximum_safe_offsset = min(
-        MAX_TEMPORAL_OFFSET_DAYS,
-        days_until_today,
-    )
-    
-    
-    
     for customer in customer_data:
         customer_id = customer["CustomerID"]
+
+        maximum_safe_offset = calculate_maximum_safe_offset(
+            today,
+            latest_event_date_by_customer[customer_id],
+        )
+
         anonymous_customer_key = anonymous_customer_map[customer_id]
+
         temporal_offset_days = random.randint(
             MIN_TEMPORAL_OFFSET_DAYS,
-            maximum_safe_offsset,
+            maximum_safe_offset,
         )
+
         customer_temporal_offset_map[
             anonymous_customer_key
         ] = temporal_offset_days
     
     return customer_temporal_offset_map
-
 
 
 # DATETIME SHIFT
@@ -330,6 +364,7 @@ def shift_date(date_string, temporal_offset_days):
     )
 
     return shifted_date_object.strftime("%Y-%m-%d")
+    
     
 # CUSTOMER FILTER
 def filter_customer_data(
@@ -437,6 +472,7 @@ def filter_payment_data(
 
     return privacy_filtered_payment_data
 
+
 # MERGE ANONYMOUS DATA
 def reconstruct_purchase_history(
     privacy_filtered_customer_data,
@@ -480,13 +516,17 @@ def reconstruct_purchase_history(
     return anonymous_purchase_history_data
 
 
+# WRITE CSV
 def write_csv(file_path, data, fieldnames):
+    
+    
     
     with open(file_path, "w", newline="", encoding="utf-8") as file:
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         
         writer.writeheader()
         writer.writerows(data)
+
 
 # =============================================================================
 # Main Function
@@ -543,10 +583,6 @@ def main(customer_file, order_file, payment_file):
         privacy_filtered_order_data,
         privacy_filtered_payment_data
     )
- 
-     
-    # QA Validation
-    
     
     # Save anonymized datasets
     write_csv(
@@ -555,17 +591,20 @@ def main(customer_file, order_file, payment_file):
         CUSTOMER_OUTPUT_FIELDS
     )
     
+    
     write_csv(
         ORDER_OUTPUT_FILE,
         privacy_filtered_order_data,
         ORDER_OUTPUT_FIELDS
     )
     
+    
     write_csv(
         PAYMENT_OUTPUT_FILE,
         privacy_filtered_payment_data,
         PAYMENT_OUTPUT_FIELDS
     )
+    
     
     write_csv(
         PURCHASE_HISTORY_OUTPUT_FILE,

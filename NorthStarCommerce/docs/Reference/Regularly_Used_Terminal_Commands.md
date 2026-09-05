@@ -34,3 +34,8 @@ python .\python\utilities\privacy_engine.py
 ## SQL
 
 Notes...
+
+
+```bash
+python -m utilities.feature_qa
+```

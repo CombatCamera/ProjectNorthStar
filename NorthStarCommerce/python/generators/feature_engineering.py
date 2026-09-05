@@ -5,22 +5,27 @@ Feature Engineering Engine
 -------------------------------------------------------------------------------
 Author: Mat Thompson
 Created: 2026-08-19
-Version: 1.0
+Last Updated: 2026-08-25
+Version: 1.1
 
 Purpose:
 Generate reusable business features from QA-certified business events by
-transforming raw operational data into machine learning-ready evidence.
+transforming operational and privacy-preserved data into machine learning-ready
+evidence.
 
 Business Objective:
 Produce reusable evidence that supports predictive analytics while maintaining
-clear separation between feature generation, business interpretation, and
-machine learning.
+clear separation between business data preparation, feature generation,
+business interpretation, and machine learning.
 
 Core Responsibilities:
 - Generate reusable business features.
 - Organize features into logical feature families.
-- Build progressively richer evidence from previously assembled features.
+- Prepare reusable business data objects for downstream feature generation.
+- Build progressively richer evidence from previously assembled business data.
 - Assemble the customer behavior feature dataset.
+- Support current-state and historical observation-based feature generation.
+- Prevent future information from entering historical feature calculations.
 - Support machine learning and future analytical engines.
 
 Core Feature Families:
@@ -29,29 +34,54 @@ Core Feature Families:
 - Behavior Features
 - Payment Features (Future)
 
-Version 1 Core Evidence Bricks:
+Business Data Preparation:
+- Successful Purchase History
+- Purchase History As Of Observation Date
+- Purchase Intervals
+- Purchase Interval Changes
+
+Version 1.1 Core Evidence:
 - DaysSinceLastPurchase
-- AvgDaysBetweenPurchases
-- PercentBeyondHealthyWindow
-- PurchaseFrequencyTrend
-- AverageOrderValueTrend
+- AverageDaysBetweenPurchases
+- SuccessfulOrderCount
+- AverageOrderValue
+- PurchaseFrequency
+- PurchaseIntervalStdDev
+- AverageIntervalChange
+
+Historical Observation Support:
+Feature generation can be anchored to a defined observation date. Only
+business events known on or before that observation date may contribute to
+historical feature calculations.
+
+Historical Data Rule:
+    OrderDateTime <= ObservationDate
+
+This boundary prevents future information from leaking into historical model
+evidence and supports the creation of time-valid machine learning training
+examples.
 
 Engineering Principles:
 - Every feature is the answer to a business question.
 - Build reusable business knowledge, not model-specific features.
 - Feature families organize the code; business questions organize the thinking.
+- Business Data Preparation creates reusable business objects before feature
+  generation.
 - Once evidence has been assembled, downstream feature families reuse it
   instead of recalculating business logic.
 - Knowledge flows forward through the pipeline.
+- Historical features may use only information available as of the observation
+  date.
+- Prefer the simplest design that remains clear, maintainable, and teachable.
 - Debugging outputs are optional and controlled through configuration.
 
 Output:
 customer_behavior_features.csv
 
 Future Expansion:
-This engine is designed to support additional feature families, contextual
-(real-world) data sources, and future analytical engines without redesigning
-the core architecture.
+This engine is designed to support historical training population generation,
+additional feature families, contextual real-world data sources, and future
+analytical engines without redesigning the core architecture.
 ===============================================================================
 """
 
@@ -60,9 +90,9 @@ import os
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 
-# =============================================================================
+# ========================================================
 # CONFIGURATION
-# =============================================================================
+# ========================================================
 
 # Dataset Selection
 
@@ -72,10 +102,6 @@ DATASET = "training"
 # Debug Mode
 
 DEBUG_MODE = True
-
-
-# Output Paths
-
 
 # Minimum Reliable History
 
@@ -105,13 +131,12 @@ REQUIRED_PAYMENT_COLUMNS = [
 
 
 
-# =============================================================================
+# ========================================================
 # LOAD DATA
-# =============================================================================
+# ========================================================
 
-'''
-Load all required datasets for Feature Engineering.
-'''
+# Load all required datasets for Feature Engineering.
+
 def load_data(
     customers_file,
     orders_file,
@@ -127,14 +152,12 @@ def load_data(
         payments_df,
     )
 
-
-# =============================================================================
+# ========================================================
 # INPUT VALIDATION
-# =============================================================================
+# ========================================================
 
-'''
-Validate the inputs for required data.
-'''
+# Validate the inputs for required data.
+
 def validate_required_columns(df, required_columns, dataset_name):
     
     missing_columns = []
@@ -163,6 +186,7 @@ def validate_inputs(
     customers_df,
     orders_df,
     payments_df,
+    verbose=True,
 ):
 
     # Customer required columns
@@ -204,17 +228,17 @@ def validate_inputs(
     )
     
     
-    if DEBUG_MODE:
+    if DEBUG_MODE and verbose:
         print("✓ Customers validated")
         print("✓ Orders validated")
         print("✓ Payments validated")
 
-# =============================================================================
+# ========================================================
 # HELPER FUNCTIONS
-# =============================================================================
-'''
-Switches between operational and training datasets.
-'''
+# ========================================================
+
+# Switches between operational and training datasets.
+
 def configure_dataset(dataset):
     
     if dataset == "operational":
@@ -244,11 +268,10 @@ def round_currency(value):
         CURRENCY_PRECISION,
         rounding=ROUND_HALF_UP
     )
-    
-    
-# =============================================================================
-# Write Output
-# =============================================================================
+     
+# ========================================================
+# # Write Output
+# ========================================================
 
 def save_feature_dataset(feature_dataset, output_path):
     feature_dataset.to_csv(
@@ -256,23 +279,23 @@ def save_feature_dataset(feature_dataset, output_path):
         index=False,
 )
 
-    
-    
-# =============================================================================
-# Business Data Preperation
-# =============================================================================
+# ========================================================
+# Business Data Preparation
+# ========================================================
 
 def generate_successful_purchase_history(orders_df, payments_df):
 
-    merged_df = pd.merge(
-        orders_df,
-        payments_df,
-        on="AnonymousOrderKey",
-    ) 
+    successful_payments = payments_df[
+        payments_df["PaymentStatus"] == "Successful"
+    ][
+        ["AnonymousOrderKey"]
+    ].drop_duplicates()
 
-    purchase_history = merged_df[
-        merged_df["PaymentStatus"] == "Successful"
-    ]
+    purchase_history = pd.merge(
+        orders_df,
+        successful_payments,
+        on="AnonymousOrderKey",
+    )
     
     successful_purchase_history = purchase_history[
         [
@@ -290,11 +313,17 @@ def generate_successful_purchase_history(orders_df, payments_df):
     return successful_purchase_history
 
 
-# Purchase Intervals
-#
-# Business Question:
-# How much time elapsed between each successful purchase
-# for every customer?
+def generate_purchase_history_as_of(
+    successful_purchase_history,
+    observation_date,
+):
+    
+    generate_purchase_history_as_of = successful_purchase_history[
+        successful_purchase_history["OrderDateTime"] <= observation_date
+    ].copy()
+
+    return generate_purchase_history_as_of
+
 
 def generate_purchase_intervals(successful_purchase_history):
     
@@ -345,9 +374,9 @@ def generate_purchase_interval_changes(purchase_intervals):
     
     return purchase_interval_changes
     
-# =============================================================================
-# FEATURE FAMILIES
-# =============================================================================
+# ========================================================
+# # FEATURE FAMILIES
+# ========================================================
      
 # Generate reusable time-based customer behavior features that describe
 # a customer's purchasing history and current purchasing state.
@@ -393,7 +422,8 @@ def generate_temporal_features(
         days_since_last_purchase,
         average_days_between_purchases,
         on="AnonymousCustomerKey",
-    ) 
+        how="left",
+    )
        
     return temporal_features
     
@@ -437,8 +467,8 @@ def generate_purchase_features(successful_purchase_history,):
     ).dt.days
 
     purchase_frequency = (
-        successful_order_count 
-        / active_purchase_days
+        successful_order_count
+        / active_purchase_days.replace(0, pd.NA)
     )
     
     purchase_frequency.name = ("PurchaseFrequency")
@@ -474,11 +504,12 @@ def generate_purchase_features(successful_purchase_history,):
 # Behavior Features
 
 def meets_minimum_reliable_history(history):
-    number_of_intervals = len(history)
+
+    number_of_intervals = history.notna().sum()
+
     return number_of_intervals >= MINIMUM_RELIABLE_HISTORY
     
-
-
+    
 def generate_purchase_interval_stddev(purchase_intervals):
     
     # Minimum Reliable History
@@ -492,11 +523,14 @@ def generate_purchase_interval_stddev(purchase_intervals):
 def generate_average_interval_change(purchase_interval_changes):
     
     # Minimum Reliable History
-    if not meets_minimum_reliable_history(purchase_interval_changes):
+    if not meets_minimum_reliable_history(
+        purchase_interval_changes["DaysBetweenPurchases"]
+    ):
         return pd.NA
     
     # Average Purchase Interval Change
     return purchase_interval_changes["PurchaseIntervalChange"].mean()
+
 
 def generate_behavior_features(
     purchase_intervals, 
@@ -507,7 +541,7 @@ def generate_behavior_features(
     
     # Group Customers
     for customer_key in purchase_intervals["AnonymousCustomerKey"].unique():
-        custmoer_intervals = purchase_intervals[
+        customer_intervals = purchase_intervals[
             purchase_intervals["AnonymousCustomerKey"] == customer_key
         ]
     
@@ -515,9 +549,9 @@ def generate_behavior_features(
             purchase_interval_changes["AnonymousCustomerKey"] == customer_key
         ]
         
-        # For Each Customer, Calculate Featuers
+        # For Each Customer, Calculate Features
         purchase_interval_stddev = generate_purchase_interval_stddev(
-            custmoer_intervals["DaysBetweenPurchases"]
+            customer_intervals["DaysBetweenPurchases"]
         )
     
         average_interval_change = generate_average_interval_change(
@@ -536,11 +570,10 @@ def generate_behavior_features(
     
     # Return DataFrame
     return pd.DataFrame(behavior_records)
-            
-            
-# =============================================================================
+                    
+# ========================================================
 # ASSEMBLER
-# =============================================================================
+# ========================================================
 
 def assemble_feature_dataset(
     temporal_features, 
@@ -548,23 +581,28 @@ def assemble_feature_dataset(
     behavior_features 
 ):
     
-    featrue_dataset = temporal_features.merge(
+    feature_dataset = temporal_features.merge(
         purchase_features,
         on="AnonymousCustomerKey",
         how="left",
     )
 
-    featrue_dataset = featrue_dataset.merge(
+    feature_dataset = feature_dataset.merge(
         behavior_features,
         on="AnonymousCustomerKey",
         how="left",
     )
 
-    return featrue_dataset
-# =============================================================================
-# Feature Pipline
-# =============================================================================
-def build_feature_dataset():
+    return feature_dataset
+
+# ========================================================
+# Feature Pipeline
+# ========================================================
+
+def build_feature_dataset(
+    observation_date=None,
+    verbose=True,
+):
     # Select data
     (
         customers_file,
@@ -590,16 +628,32 @@ def build_feature_dataset():
         customers_df,
         orders_df,
         payments_df,
+        verbose=verbose,
     )
     
     
     # Call Business Data Preparation
     successful_purchase_history = generate_successful_purchase_history(
-        orders_df, payments_df,
+        orders_df, 
+        payments_df,
     )
+    
+    
+    if observation_date is None:
+        evaluation_date = datetime.now()
+    else:
+        evaluation_date = pd.to_datetime(observation_date)
+        
+        
+    purchase_history_as_of = generate_purchase_history_as_of(
+        successful_purchase_history,
+        evaluation_date,
+    )
+    
+    qa_purchase_history = purchase_history_as_of
 
     purchase_intervals = generate_purchase_intervals(
-    successful_purchase_history
+        purchase_history_as_of
     )
 
     purchase_interval_changes = generate_purchase_interval_changes(
@@ -607,19 +661,19 @@ def build_feature_dataset():
     )
 
     
-    evaluation_date = datetime.now()
+
 
 
     # Generate temporal features
     temporal_features = generate_temporal_features(
-        successful_purchase_history,
+        purchase_history_as_of,
         purchase_intervals,
         evaluation_date,
     )
     
     # Generate Purchase Features
     purchase_features = generate_purchase_features(
-        successful_purchase_history,
+        purchase_history_as_of,
     )
     
     # Generate Behavior Features
@@ -628,7 +682,6 @@ def build_feature_dataset():
         purchase_interval_changes
     )
     
-    
     # Assemble dataset
     feature_dataset = assemble_feature_dataset(
         temporal_features,
@@ -636,17 +689,16 @@ def build_feature_dataset():
         behavior_features
     )
 
-    return feature_dataset, successful_purchase_history
+    return feature_dataset, qa_purchase_history
 
+# ========================================================
+# Main
+# ========================================================
 
 def main():
     
     
     feature_dataset, successful_purchase_history = build_feature_dataset()
-
-
-    
-
 
 
 if __name__ == "__main__":

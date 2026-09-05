@@ -5,7 +5,7 @@ Engine:         NorthStar Commerce QA Engine
 File:           qa_validation.py
 Author:         Mat Thompson
 Created:        2026-08-03
-Last Updated:   2026-08-17
+Last Updated:   2026-08-30
 Version:        2.0
 
 Purpose:
@@ -79,18 +79,25 @@ from pathlib import Path
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 
-# =============================================================================
-# DATASET TO VALIDATE
-# =============================================================================
+# ========================================================= 
+# VERSION
+# =========================================================
 
-# DATASET = "operational"
-DATASET = "training"
+QA_ENGINE_VERSION = "2.0"
+
+# =========================================================
+# DATASET TO VALIDATE
+# =========================================================
+
+DATASET = "operational"
+# DATASET = "training"
 
 # ========================================================= 
 # REPORT SETTINGS
 # =========================================================
 
 REPORT_WIDTH = 85
+
 CURRENCY_PRECISION = Decimal("0.01")
 
 # ============================================================
@@ -102,7 +109,6 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_FOLDER = PROJECT_ROOT / "data" / "raw"
 
 TRAINING_DATA_FOLDER = PROJECT_ROOT / "data" / "training_source"
-
 
 CUSTOMERS_FILE = DATA_FOLDER / "customers.csv"
 PRODUCTS_FILE = DATA_FOLDER / "products.csv"
@@ -117,8 +123,6 @@ TRAINING_ORDERS_FILE = TRAINING_DATA_FOLDER / "training_orders.csv"
 TRAINING_ORDER_ITEMS_FILE = TRAINING_DATA_FOLDER / "training_order_items.csv"
 TRAINING_PAYMENTS_FILE = TRAINING_DATA_FOLDER / "training_payments.csv"
   
-    
-
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
@@ -252,6 +256,7 @@ def build_successful_payments_lookup(payments):
             successful_payments_lookup[order_id] = payment
             
     return successful_payments_lookup
+
 # ============================================================
 # VALIDATION FUNCTIONS
 # ============================================================
@@ -279,6 +284,7 @@ def validate_orders_have_items(orders, order_items):
             f"{len(orders_without_items):,} orders are missing items."
         )
     }
+
 
 def validate_unique_order_ids(orders):
     order_id_counts = build_order_id_counts(orders)
@@ -405,10 +411,18 @@ def validate_payment_amounts_match_order_totals(orders, payments):
         if order is None:
             continue
 
-        payment_amount = float(payment["PaymentAmount"])
-        order_total = float(order["Total"])
+        payment_amount = Decimal(
+            str(payment["PaymentAmount"])
+        )
 
-        if round(payment_amount, 2) != round(order_total, 2):
+        order_total = Decimal(
+            str(order["Total"])
+        )
+
+        if (
+            round_currency(payment_amount)
+            != round_currency(order_total)
+        ):
             mismatched_payments.append(
                 {
                     "PaymentID": payment["PaymentID"],
@@ -430,6 +444,7 @@ def validate_payment_amounts_match_order_totals(orders, payments):
             f"{len(mismatched_payments):,} payments have mismatched amounts."
         ),
     }
+   
     
 def validate_order_totals_reconciled(orders, order_items):
     order_items_lookup = build_order_items_lookup(order_items)
@@ -820,10 +835,18 @@ def validate_shipping_cost_match_orders(shipments, orders):
         if order is None:
             continue
 
-        shipment_cost = float(shipment["ShippingCost"])
-        order_shipping_cost = float(order["Shipping"])
+        shipment_cost = Decimal(
+            str(shipment["ShippingCost"])
+        )
 
-        if round(shipment_cost, 2) != round(order_shipping_cost, 2):
+        order_shipping_cost = Decimal(
+            str(order["Shipping"])
+        )
+
+        if (
+            round_currency(shipment_cost)
+            != round_currency(order_shipping_cost)
+        ):
             mismatched_shipments.append(
                 {
                     "ShipmentID": shipment["ShipmentID"],
@@ -845,7 +868,6 @@ def validate_shipping_cost_match_orders(shipments, orders):
             f"{len(mismatched_shipments):,} shipments have mismatched shipping costs."
         ),
     }
-  
   
   
 def validate_carrier_tracking_present(shipments):
@@ -912,7 +934,7 @@ def validate_shipment_status_values(shipments):
             f"{len(invalid_shipments):,} shipments have invalid status values."
         ),
     }
-  
+ 
 # ============================================================
 # MAIN
 # ============================================================
@@ -938,9 +960,7 @@ def main(
 # ============================================================
 # VALIDATIONS
 # ============================================================
-    
-  
-    
+
     results = []
 
     results.append(validate_orders_have_items(orders, order_items))
@@ -1071,14 +1091,15 @@ def main(
         print("✓ Financial Integrity Verified")
         print("✓ Timeline Integrity Verified")
         print("✓ Business Rules Verified")
-        print("✓ Shipment Lifecycle Verified")
+        if shipments_file is not None:
+            print("✓ Shipment Lifecycle Verified")
         print("✓ Data Quality Verified")
     else:
         print("✗ One or more validation checks require review.")
 
     print()
     print(f"Dataset Certification  : {certification_status}")
-    print("QA Framework Version   : 1.0")
+    print(f"QA Engine Version       : {QA_ENGINE_VERSION}")
     print()
 
     print("Approved For Downstream Analytics:")

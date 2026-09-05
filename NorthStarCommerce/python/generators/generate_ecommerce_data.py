@@ -72,10 +72,10 @@ from decimal import Decimal, ROUND_HALF_UP
 # ============================================================
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 RAW_DATA_FOLDER = PROJECT_ROOT / "data" / "raw"
 
 RAW_DATA_FOLDER.mkdir(parents=True, exist_ok=True)
-
 
 # ============================================================
 # GENERATOR SETTINGS
@@ -84,6 +84,7 @@ RAW_DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 RANDOM_SEED = 42
 
 START_DATE = date(2023, 1, 1)
+
 END_DATE = date.today()
 
 CURRENT_DATETIME = datetime.combine(
@@ -92,13 +93,12 @@ CURRENT_DATETIME = datetime.combine(
 )
 
 NUMBER_OF_CUSTOMERS = 5_000
+
 NUMBER_OF_PRODUCTS = 120
 
 CURRENCY_PRECISION = Decimal("0.01")
 
-
 random.seed(RANDOM_SEED)
-
 
 # ============================================================
 # OUTPUT FILES
@@ -114,7 +114,6 @@ SHIPMENTS_FILE = RAW_DATA_FOLDER / "shipments.csv"
 
 # Reserved for future returns module.
 RETURNS_FILE = RAW_DATA_FOLDER / "returns.csv"
-
 
 # ============================================================
 # PRODUCT CONFIGURATION
@@ -323,6 +322,7 @@ ORDER_HOUR_WEIGHTS = [
 #=SHIPPING====================================================
 
 SHIPPING_METHODS = ["Standard", "Two-Day", "Next-Day"]
+
 SHIPPING_METHOD_WEIGHTS = [80, 15, 5]
 
 SHIPPING_RATES = {
@@ -387,9 +387,10 @@ PAYMENT_METHOD_WEIGHTS = [
 ]
 
 FIRST_ATTEMPT_SUCCESS_RATE = 0.92
-RETRY_PROBABILITY = 0.75
-RETRY_SUCCESS_RATE = 0.85
 
+RETRY_PROBABILITY = 0.75
+
+RETRY_SUCCESS_RATE = 0.85
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -400,6 +401,7 @@ def round_currency(value):
         CURRENCY_PRECISION,
         rounding=ROUND_HALF_UP
     )
+
 
 def random_date(start: date, end: date) -> date:
     """Return a random date between start and end, inclusive."""
@@ -424,7 +426,7 @@ def calculate_orders_for_year(
     year_start = date(year, 1, 1)
     year_end = date(year, 12, 31)
     
-    #Do not generate activity outside the project's date range.
+    # Do not generate activity outside the project's date range.
     year_start = max(year_start, start_date)
     year_end = min(year_end, end_date)
     
@@ -454,7 +456,7 @@ def calculate_orders_for_year(
         full_year_order_target * active_year_fraction
     )
 
-    # A customer active during the year should have a at least one order.
+    # A customer active during the year should have at least one order.
     return max(1, prorated_order_count)
 
 
@@ -478,7 +480,6 @@ def determine_shipping(loyalty_tier, subtotal):
     return shipping_method, shipping_charge
 
 
-
 def build_order_items_lookup(order_items):
     """Group all order items by OrderID."""
     order_items_lookup = {}
@@ -492,16 +493,6 @@ def build_order_items_lookup(order_items):
         order_items_lookup[order_id].append(item)
         
     return order_items_lookup
-
-
-def build_product_lookup(products):
-    """Group Products by ProductID."""
-    product_lookup = {}
-    
-    for product in products:
-        product_lookup[product["ProductID"]] = product
-        
-    return product_lookup
 
 
 def build_successful_payments_lookup(payments):
@@ -680,6 +671,7 @@ def generate_customers(
 
     return customers
 
+
 def generate_categories() -> list[dict]:
     """Create one record for each product category."""
     categories = []
@@ -759,7 +751,6 @@ def generate_products(
     return products
 
 
-
 def generate_orders(
     customers: list[dict],
     start_date: date,
@@ -836,7 +827,6 @@ def generate_orders(
     return orders
 
 
-
 def generate_order_items(orders, products):
     """
     Generate order items for each order
@@ -899,7 +889,9 @@ def generate_order_items(orders, products):
                 k=1
             )[0]
 
-            line_total = round(quantity * product["UnitPrice"], 2,)
+            line_total = round_currency(
+                quantity * product["UnitPrice"]
+            )
 
             order_item = {
                 "OrderItemID": next_order_item_id,
@@ -1085,8 +1077,8 @@ def generate_payments(orders):
     return payments
     
     
-#ShipmentDateTime represents teh actual shipment time for completed
-#shipments and the scheduled shipmnet time for orders tstill proscessing.
+# ShipmentDateTime represents the actual shipment time for completed
+# shipments and the scheduled shipment time for orders still processing.
 def generate_shipments(orders, payments):
     """Generate shipment records for orders with successful payments."""
 
@@ -1215,6 +1207,7 @@ def generate_shipments(orders, payments):
         next_shipment_id += 1
 
     return shipments   
+
 # ============================================================
 # CSV EXPORT FUNCTIONS
 # ============================================================
@@ -1238,13 +1231,12 @@ def write_csv(
         writer.writeheader()
         writer.writerows(records)
 
-
 # ============================================================
 # MAIN PROGRAM
 # ============================================================
 
 def main() -> None:
-    print("Northstar Commerce data generator")
+    print("NorthStar Commerce data generator")
     print(f"Project root: {PROJECT_ROOT}")
     print(f"Raw data folder: {RAW_DATA_FOLDER}")
     print()
@@ -1252,14 +1244,13 @@ def main() -> None:
     print("Generator configuration:")
     print(f"Customers: {NUMBER_OF_CUSTOMERS:,}")
     print(f"Products: {NUMBER_OF_PRODUCTS:,}")
-    #print(f"Orders: {TARGET_NUMBER_OF_ORDERS:,}")
     print(f"Date range: {START_DATE} to {END_DATE}")
     print()
 
     customers = generate_customers(
         NUMBER_OF_CUSTOMERS,
         START_DATE,
-        END_DATE
+        END_DATE,
     )
     
     customer_lookup = {
@@ -1268,28 +1259,43 @@ def main() -> None:
     }
     
     categories = generate_categories()
+    
     products = generate_products(
         categories,
-        END_DATE
+        END_DATE,
     )
-    product_lookup = build_product_lookup(products)
+    
     orders = generate_orders(
         customers,
         START_DATE,
         END_DATE,
     )
-    order_items = generate_order_items(orders, products)
-    order_items_lookup = build_order_items_lookup(order_items)
     
-
+    order_items = generate_order_items(
+        orders,
+        products,
+    )
+    
+    order_items_lookup = build_order_items_lookup(
+        order_items,
+    )
+    
     orders = finalize_orders(
         orders,
         order_items_lookup,
         customer_lookup
     )
 
-    payments = generate_payments(orders)
-    shipments = generate_shipments(orders, payments)
+    payments = generate_payments(
+        orders,
+    )
+    
+    shipments = generate_shipments(
+        orders, 
+        payments,
+    )
+
+
 
     write_csv(
     CUSTOMERS_FILE,
@@ -1313,11 +1319,13 @@ def main() -> None:
     ],
     )
 
+
     write_csv(
         CATEGORIES_FILE,
         categories,
         ["CategoryID", "CategoryName"],
     )
+
 
     write_csv(
         PRODUCTS_FILE,
@@ -1332,6 +1340,7 @@ def main() -> None:
             "IsActive",
         ],
     )
+
 
     write_csv(
         ORDERS_FILE,
@@ -1349,6 +1358,7 @@ def main() -> None:
             "Total",
         ]
     )
+
 
     write_csv(
         ORDER_ITEMS_FILE,
